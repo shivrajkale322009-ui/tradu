@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getUserProfile, updateUserProfile } from '../utils/db';
-import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette } from 'lucide-react';
+import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
@@ -13,7 +13,11 @@ export default function Profile() {
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
   const [newPair, setNewPair] = useState('');
   const [newStrategy, setNewStrategy] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [photoURL, setPhotoURL] = useState('');
+  const [isEditingName, setIsEditingName] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -29,8 +33,57 @@ export default function Profile() {
     if (profile) {
       if (profile.favouritePairs) setFavouritePairs(profile.favouritePairs);
       if (profile.strategies) setStrategies(profile.strategies);
+      setDisplayName(profile.displayName || currentUser.displayName || '');
+      setPhotoURL(profile.photoURL || currentUser.photoURL || '');
+    } else {
+      setDisplayName(currentUser.displayName || '');
+      setPhotoURL(currentUser.photoURL || '');
     }
     setLoading(false);
+  };
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please upload an image file');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          // Resize profile image to 200x200
+          const size = 200;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          
+          // Draw image centered and cropped to square
+          const minSide = Math.min(img.width, img.height);
+          const sx = (img.width - minSide) / 2;
+          const sy = (img.height - minSide) / 2;
+          
+          ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          setPhotoURL(dataUrl);
+          await updateUserProfile(currentUser.uid, { photoURL: dataUrl });
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUpdateName = async () => {
+    if (!displayName.trim()) return;
+    setIsSaving(true);
+    await updateUserProfile(currentUser.uid, { displayName: displayName.trim() });
+    setIsEditingName(false);
+    setIsSaving(false);
   };
 
   const handleAddPair = async (e) => {
@@ -93,19 +146,99 @@ export default function Profile() {
         <h1 style={{ margin: 0, flex: 1 }}>My Profile</h1>
       </header>
 
-      <div className="profile-section" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '2rem' }}>
+      <div className="profile-section glass-panel" style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '1.5rem', 
+        padding: '2rem', 
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: '2rem'
+      }}>
         <div style={{ position: 'relative' }}>
-          {currentUser.photoURL ? (
-            <img src={currentUser.photoURL} alt="Profile" style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
-          ) : (
-            <div style={{ width: '80px', height: '80px', borderRadius: '50%', backgroundColor: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <User size={40} />
-            </div>
-          )}
+          <div style={{ 
+            width: '100px', 
+            height: '100px', 
+            borderRadius: '50%', 
+            overflow: 'hidden',
+            border: '3px solid var(--primary)',
+            boxShadow: '0 0 15px var(--primary-glow)',
+            position: 'relative'
+          }}>
+            {photoURL ? (
+              <img src={photoURL} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ 
+                width: '100%', 
+                height: '100%', 
+                backgroundColor: 'var(--surface-light)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'var(--text-muted)' 
+              }}>
+                <User size={48} />
+              </div>
+            )}
+          </div>
+          <label 
+            htmlFor="profile-photo-upload" 
+            className="icon-btn" 
+            style={{ 
+              position: 'absolute', 
+              bottom: 0, 
+              right: 0, 
+              backgroundColor: 'var(--primary)', 
+              color: 'white',
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              border: '2px solid var(--background)'
+            }}
+          >
+            <Camera size={16} />
+          </label>
+          <input 
+            id="profile-photo-upload" 
+            type="file" 
+            accept="image/*" 
+            onChange={handlePhotoUpload} 
+            style={{ display: 'none' }} 
+          />
         </div>
+
         <div style={{ flex: 1 }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{currentUser.displayName || 'Trader Account'}</h2>
-          <p className="text-muted" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+            {isEditingName ? (
+              <div style={{ display: 'flex', gap: '0.5rem', width: '100%', maxWidth: '300px' }}>
+                <input
+                  type="text"
+                  className="input"
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  autoFocus
+                  style={{ padding: '0.25rem 0.75rem', height: '36px' }}
+                />
+                <button onClick={handleUpdateName} disabled={isSaving} className="icon-btn text-success" title="Save">
+                  <Check size={20} />
+                </button>
+                <button onClick={() => { setIsEditingName(false); loadProfile(); }} className="icon-btn text-muted" title="Cancel">
+                  <X size={20} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{displayName || 'Trader Account'}</h2>
+                <button onClick={() => setIsEditingName(true)} className="icon-btn" style={{ padding: '0.25rem', opacity: 0.6 }} title="Edit Name">
+                  <Edit2 size={16} />
+                </button>
+              </>
+            )}
+          </div>
+          <p className="text-muted" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '0.9rem' }}>
             <Shield size={14} /> {currentUser.email}
           </p>
           <button onClick={handleLogout} className="btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', fontSize: '0.875rem' }}>

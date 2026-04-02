@@ -16,6 +16,10 @@ export default function Navigation() {
         <Clock size={24} />
         <span>History</span>
       </NavLink>
+      <NavLink to="/profile" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+        <User size={24} />
+        <span>Profile</span>
+      </NavLink>
     </div>
   );
 }

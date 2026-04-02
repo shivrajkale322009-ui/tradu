@@ -1,5 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
-import { getTrades, deleteTrade } from '../utils/db';
+import { getTrades, deleteTrade, getUserProfile } from '../utils/db';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, TrendingDown, Trash2, LogIn, User, ArrowRight, Activity, 
@@ -121,17 +120,25 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { currentUser, loginWithGoogle } = useAuth();
   const [trades, setTrades] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('ALL'); // 'ALL', 'MONTH', 'WEEK'
 
   useEffect(() => {
     if (currentUser) {
       loadTrades(currentUser.uid);
+      loadProfile(currentUser.uid);
     } else {
       setTrades([]);
+      setUserProfile(null);
       setLoading(false);
     }
   }, [currentUser]);
+
+  const loadProfile = async (userId) => {
+    const profile = await getUserProfile(userId);
+    setUserProfile(profile);
+  };
 
   const loadTrades = async (userId) => {
     setLoading(true);
@@ -225,6 +232,34 @@ export default function Dashboard() {
 
   return (
     <div className="page-container dashboard-layout">
+      {/* HEADER SECTION */}
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>
+            Welcome, {userProfile?.displayName || currentUser.displayName?.split(' ')[0] || 'Trader'}
+          </h1>
+          <p className="text-muted" style={{ fontSize: '0.9rem' }}>Market terminal active and ready.</p>
+        </div>
+        <Link to="/profile" className="tooltip-container" style={{ position: 'relative' }}>
+          <div style={{ 
+            width: '48px', 
+            height: '48px', 
+            borderRadius: '50%', 
+            overflow: 'hidden', 
+            border: '2px solid var(--primary)', 
+            boxShadow: '0 0 10px var(--primary-glow)' 
+          }}>
+            {userProfile?.photoURL || currentUser.photoURL ? (
+              <img src={userProfile?.photoURL || currentUser.photoURL} alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', background: 'var(--surface-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <User size={24} className="text-primary" />
+              </div>
+            )}
+          </div>
+        </Link>
+      </header>
+
       {/* 1. TOP METRICS ROW */}
       <div className="metrics-row">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-panel metric-card">
