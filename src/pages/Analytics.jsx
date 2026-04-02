@@ -132,9 +132,9 @@ export default function Analytics() {
 
     return {
       totalTrades: trades.length,
-      winRate: winRate,
-      totalPnl: totalPnl,
-      avgPnl: (totalPnl / (trades.length || 1)),
+      winRate: Number(winRate) || 0,
+      totalPnl: Number(totalPnl) || 0,
+      avgPnl: Number(totalPnl / (trades.length || 1)) || 0,
       wins: wins.length,
       losses: losses.length,
       c2c: c2cArr.length,
@@ -143,7 +143,7 @@ export default function Analytics() {
       emotionalData,
       maxWinStreak,
       maxLossStreak,
-      maxDrawdown: maxDrawdown.toFixed(2),
+      maxDrawdown: Number(maxDrawdown) || 0,
       bestTrade: sortedByPnl[0],
       worstTrade: sortedByPnl[sortedByPnl.length - 1],
       winLossPie: [
@@ -236,10 +236,10 @@ export default function Analytics() {
       </header>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <StatCard title="Win Rate" value={`${Number(analyticsData.winRate).toFixed(1)}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--success)" />
-        <StatCard title="Net PnL" value={`$${Number(analyticsData.totalPnl).toFixed(2)}`} subtext="Collective Gains" icon={Wallet} color="var(--primary)" />
+        <StatCard title="Win Rate" value={`${(Number(analyticsData.winRate) || 0).toFixed(1)}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--success)" />
+        <StatCard title="Net PnL" value={`$${(Number(analyticsData.totalPnl) || 0).toFixed(2)}`} subtext="Collective Gains" icon={Wallet} color="var(--primary)" />
         <StatCard title="Total Volume" value={analyticsData.totalTrades} subtext="Trades Logged" icon={BarChart3} color="var(--secondary)" />
-        <StatCard title="Avg Profit" value={`$${Number(analyticsData.avgPnl).toFixed(2)}`} subtext="Per Session" icon={Activity} />
+        <StatCard title="Avg Profit" value={`$${(Number(analyticsData.avgPnl) || 0).toFixed(2)}`} subtext="Per Session" icon={Activity} />
       </div>
 
       {/* STRATEGIC PERFORMANCE MATRIX (v5.0) */}
@@ -430,11 +430,11 @@ export default function Analytics() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Best Performance</span>
-                <span className="text-success" style={{ fontWeight: 600 }}>+${analyticsData.bestTrade?.pnl || 0}</span>
+                <span className="text-success" style={{ fontWeight: 600 }}>+${(Number(analyticsData.bestTrade?.pnl) || 0).toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Max Drawdown</span>
-                <span className="text-danger" style={{ fontWeight: 600 }}>-${analyticsData.maxDrawdown}</span>
+                <span className="text-danger" style={{ fontWeight: 600 }}>-${(Number(analyticsData.maxDrawdown) || 0).toFixed(2)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Win Streak</span>
