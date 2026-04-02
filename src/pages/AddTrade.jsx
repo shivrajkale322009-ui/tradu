@@ -224,7 +224,7 @@ export default function AddTrade() {
     type: 'long',
     pnl: '',
     date: new Date().toISOString().slice(0, 10),
-    time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+    time: new Date().toISOString().slice(11, 16), // HH:mm format in UTC
     strategy: '',
     emotion: 'neutral',
     quality: 'a1',

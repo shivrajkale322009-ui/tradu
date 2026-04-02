@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getUserProfile, updateUserProfile, saveTrade, createSharedJournal, joinSharedJournal, leaveSharedJournal } from '../utils/db';
-import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database, Users, Share2, Activity, Link as LinkIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database, Users, Share2, Activity, Link as LinkIcon, Copy } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function Profile() {
   const { currentUser, logout } = useAuth();
   const { theme, changeTheme } = useTheme();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
   const [fontSize, setFontSize] = useState(16);
   const [capital, setCapital] = useState(0);
@@ -36,10 +37,15 @@ export default function Profile() {
   useEffect(() => {
     if (currentUser) {
       loadProfile();
+      // Handle auto-join from shared link
+      const joinParam = searchParams.get('join');
+      if (joinParam) {
+        handleJoinSync(joinParam);
+      }
     } else {
       navigate('/');
     }
-  }, [currentUser, navigate]);
+  }, [currentUser, navigate, searchParams]);
 
   const loadProfile = async () => {
     setLoading(true);
@@ -118,12 +124,15 @@ export default function Profile() {
     }
   };
 
-  const handleJoinSync = async () => {
-    if (!joinCode.trim()) return;
+  const handleJoinSync = async (code) => {
+    const targetCode = code || joinCode;
+    if (!targetCode.trim()) return;
     try {
       setLoading(true);
-      await joinSharedJournal(currentUser.uid, joinCode.trim());
+      await joinSharedJournal(currentUser.uid, targetCode.trim());
       setJoinCode('');
+      // Clean up URL if joining from link
+      if (code) navigate('/profile', { replace: true });
       alert("SESSION_JOINED: Terminal synchronized with co-analyst.");
       loadProfile();
     } catch (err) {
@@ -131,6 +140,12 @@ export default function Profile() {
       alert("INVALID_OR_EXPIRED_CODE");
       setLoading(false);
     }
+  };
+
+  const handleCopyLink = () => {
+    const shareUrl = `${window.location.origin}/profile?join=${hostedJournalCode}`;
+    navigator.clipboard.writeText(shareUrl);
+    alert("LINK_COPIED: Share this with your co-analyst to auto-sync.");
   };
 
   const handleLeaveSync = async () => {
@@ -169,15 +184,28 @@ export default function Profile() {
         if (openTime && pair && type) {
           setMigrationStatus(`FEEDING_TRADE: ${++count} / ${lines.length}`);
           
-          // Parse opening time (Format: 2026-04-02 13:41:31)
-          const [datePart, timePart] = openTime.split(' ');
+          // Tactical Timezone Correction: IST (UTC+5:30) to ISO (UTC)
+          // MT4 format: 2026-04-02 13:41:31
+          const normalizedTime = openTime.replace(/-/g, '/');
+          const istDate = new Date(`${normalizedTime} GMT+0530`);
+          const utcISO = istDate.toISOString(); 
+          const [datePart, timePartFull] = utcISO.split('T');
+          const timePart = timePartFull.split('.')[0]; // HH:mm:ss
+
+          // Convert closing time if present
+          let closingTimeUTC = null;
+          if (closeTime) {
+            const istClose = new Date(`${closeTime.replace(/-/g, '/')} GMT+0530`);
+            closingTimeUTC = istClose.toISOString();
+          }
+
           const seqNo = parseInt(seq) || count;
           lastSeq = Math.max(lastSeq, seqNo);
 
           await saveTrade({
             date: datePart,
             time: timePart,
-            closingTime: closeTime,
+            closingTime: closingTimeUTC,
             pair: pair.toUpperCase(),
             type: type.toLowerCase(),
             lots: lots || '0.01',
@@ -186,7 +214,7 @@ export default function Profile() {
             strategy: '',
             emotion: 'neutral',
             quality: 'a1',
-            notes: 'MIGRATED_RECORD'
+            notes: 'MIGRATED_RECORD_IST_SYNCED'
           }, currentUser.uid);
         }
       }
@@ -284,49 +312,56 @@ export default function Profile() {
           )}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+        <div className="shared-cockpit-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
           {/* Host Mode */}
-          <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+          <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.75rem', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
             <h3 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Host Station</h3>
             {hostedJournalCode ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>YOUR_SYNC_CODE:</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.2em', fontFamily: 'monospace', padding: '0.5rem', background: 'rgba(0, 240, 255, 0.05)', textAlign: 'center', borderRadius: '0.5rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.2em', fontFamily: 'monospace', padding: '0.75rem', background: 'rgba(0, 240, 255, 0.05)', textAlign: 'center', borderRadius: '0.5rem', border: '1px solid rgba(0, 240, 255, 0.1)' }}>
                   {hostedJournalCode}
                 </div>
-                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>Give this code to your partner to start dual-analysis.</p>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={handleCopyLink} className="btn-primary" style={{ flex: 1, height: '40px', fontSize: '0.75rem', background: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                    <Copy size={14} /> COPY_LINK
+                  </button>
+                  <button onClick={handleCreateSync} className="btn-outline" style={{ flex: 1, height: '40px', fontSize: '0.75rem' }}>
+                    <Share2 size={14} /> REGEN
+                  </button>
+                </div>
+                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, textAlign: 'center' }}>Partner can join via code or shared link.</p>
               </div>
             ) : (
-              <button onClick={handleCreateSync} className="btn-outline" style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)' }}>
+              <button onClick={handleCreateSync} className="btn-outline" style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)', height: '45px' }}>
                 <Share2 size={16} /> GENERATE_SYNC_CODE
               </button>
             )}
           </div>
 
           {/* Join Mode */}
-          <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+          <div style={{ padding: '1.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.75rem', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column' }}>
              <h3 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Join Station</h3>
              {activeJournalId !== currentUser.uid ? (
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                 <div style={{ padding: '1rem', textAlign: 'center', background: 'rgba(0, 240, 255, 0.05)', borderRadius: '0.5rem', border: '1px solid var(--secondary)' }}>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
+                 <div style={{ padding: '1rem', textAlign: 'center', background: 'rgba(0, 240, 255, 0.05)', borderRadius: '0.5rem', border: '1px solid var(--secondary)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '0.9rem' }}>CONNECTED</div>
                     <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>TUNED_TO_REMOTE_DATA_STREAM</div>
                  </div>
-                 <button onClick={handleLeaveSync} className="btn-outline" style={{ width: '100%', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+                 <button onClick={handleLeaveSync} className="btn-outline" style={{ width: '100%', borderColor: 'var(--danger)', color: 'var(--danger)', height: '40px' }}>
                    <LogOut size={16} /> DISCONNECT_SESSION
                  </button>
                </div>
              ) : (
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
                  <input 
                    type="text" 
                    placeholder="ENTER_6_DIGIT_CODE" 
                    value={joinCode}
                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                    className="input"
-                   style={{ textAlign: 'center', letterSpacing: '0.2em' }}
+                   style={{ textAlign: 'center', letterSpacing: '0.2em', height: '45px' }}
                  />
-                 <button onClick={handleJoinSync} disabled={!joinCode} className="btn-primary" style={{ width: '100%', background: 'var(--secondary)', borderColor: 'var(--secondary)' }}>
+                 <button onClick={() => handleJoinSync()} disabled={!joinCode} className="btn-primary" style={{ width: '100%', background: 'var(--secondary)', borderColor: 'var(--secondary)', height: '45px' }}>
                    <LinkIcon size={16} /> JOIN_CO-PILOT
                  </button>
                </div>

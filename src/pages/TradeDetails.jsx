@@ -118,7 +118,12 @@ export default function TradeDetails() {
                 </span>
                 <span className="badge bg-muted">
                   <Calendar size={14} />
-                  {trade.date} {trade.time && `• ${trade.time}`}
+                  {(() => {
+                    const utcString = `${trade.date}T${trade.time}Z`;
+                    const date = new Date(utcString);
+                    if (isNaN(date.getTime())) return <>{trade.date} {trade.time}</>;
+                    return `${date.toLocaleDateString()} • ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                  })()}
                 </span>
                 {trade.strategy && (
                   <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', color: 'var(--primary)' }}>
@@ -138,7 +143,11 @@ export default function TradeDetails() {
                 )}
                 {trade.closingTime && (
                   <span className="badge" style={{ background: 'rgba(255, 51, 102, 0.05)', color: 'var(--danger)', fontSize: '0.65rem' }}>
-                    CLOSED: {trade.closingTime.split(' ').slice(1).join(' ')}
+                    CLOSED: {(() => {
+                      const date = new Date(trade.closingTime);
+                      if (isNaN(date.getTime())) return trade.closingTime;
+                      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    })()}
                   </span>
                 )}
                 </>

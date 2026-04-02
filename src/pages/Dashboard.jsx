@@ -367,7 +367,20 @@ const JournalTable = ({ trades, navigate, isExpanded }) => (
               #{String(trade.tradeNo || trades.length - idx).padStart(3, '0')}
             </td>
             <td style={{ color: 'var(--text-muted)', fontSize: isExpanded ? '0.9rem' : '0.8rem', padding: isExpanded ? '1.5rem 1rem' : '1rem' }}>
-              {trade.date}<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span>
+              {(() => {
+                const utcString = `${trade.date}T${trade.time}Z`;
+                const date = new Date(utcString);
+                // If it's an invalid date (fallback for old records), use raw
+                if (isNaN(date.getTime())) return <>{trade.date}<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span></>;
+                return (
+                  <>
+                    {date.toLocaleDateString()}<br/>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>
+                      {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </>
+                );
+              })()}
             </td>
             <td style={{ fontWeight: 600 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: isExpanded ? '1.1rem' : '1rem' }}>

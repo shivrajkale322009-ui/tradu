@@ -234,8 +234,19 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
               #{String(trade.tradeNo || trades.length - idx).padStart(3, '0')}
             </td>
             <td style={{ color: 'var(--text-muted)', fontSize: (isExpanded || isWide) ? '0.9rem' : '0.8rem', padding: (isExpanded || isWide) ? '1.5rem 1rem' : '1rem' }}>
-              <div style={{ fontWeight: 600, color: '#fff' }}>{trade.date}</div>
-              <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{trade.time}</div>
+              {(() => {
+                const utcString = `${trade.date}T${trade.time}Z`;
+                const date = new Date(utcString);
+                if (isNaN(date.getTime())) return <><div>{trade.date}</div><div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{trade.time}</div></>;
+                return (
+                  <>
+                    <div style={{ fontWeight: 600, color: '#fff' }}>{date.toLocaleDateString()}</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>
+                      {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </>
+                );
+              })()}
             </td>
             <td>
               <div style={{ fontSize: (isExpanded || isWide) ? '1.1rem' : '1rem', fontWeight: 700, color: 'var(--primary)' }}>{trade.pair}</div>
