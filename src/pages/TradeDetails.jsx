@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getTradeById, deleteTrade, updateTrade } from '../utils/db';
+import { getTradeById, deleteTrade, updateTrade, getUserProfile } from '../utils/db';
 import { ArrowLeft, Trash2, Calendar, TrendingUp, TrendingDown, Crosshair, Target, Brain, Smile, Shield, Unlock, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
