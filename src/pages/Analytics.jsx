@@ -268,7 +268,7 @@ export default function Analytics() {
                     >
                       <Cell fill="var(--success)" />
                       <Cell fill="var(--danger)" />
-                      <Cell fill="var(--secondary)" />
+                      <Cell fill="var(--warning)" />
                     </Pie>
                     <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)' }} />
                     <Legend verticalAlign="bottom" height={36}/>

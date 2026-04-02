@@ -233,10 +233,16 @@ export default function TradeDetails() {
             <Camera size={18} className="text-primary" /> Visual Intelligence
           </h3>
           {!isLocked && (
-            <label className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', cursor: 'pointer' }}>
-               <Plus size={14} /> {trade.image ? 'CHANGE_PHOTO' : 'ADD_PHOTO'}
-               <input type="file" hidden accept="image/*" onChange={handleImageChange} />
-            </label>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <label className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', cursor: 'pointer', minWidth: '100px', justifyContent: 'center' }}>
+                 <ImageIcon size={14} /> GALLERY
+                 <input type="file" hidden accept="image/*" onChange={handleImageChange} />
+              </label>
+              <label className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', cursor: 'pointer', minWidth: '100px', justifyContent: 'center', background: 'var(--primary)', color: '#000', boxShadow: '0 0 10px var(--primary-glow)' }}>
+                 <Camera size={14} /> CAMERA
+                 <input type="file" hidden accept="image/*" capture="environment" onChange={handleImageChange} />
+              </label>
+            </div>
           )}
         </div>
         

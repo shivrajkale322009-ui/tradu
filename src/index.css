@@ -17,6 +17,11 @@
   --danger-glow: rgba(255, 51, 102, 0.6);
   --success: #00ff66;
   --success-glow: rgba(0, 255, 102, 0.5);
+  --warning: #ffcc00;
+  --warning-glow: rgba(255, 204, 0, 0.5);
+  
+  --warning: #ffcc00;
+  --warning-glow: rgba(255, 204, 0, 0.5);
   
   /* Borders & Shadows */
   --border: rgba(0, 243, 255, 0.3);
@@ -376,6 +381,16 @@ h3 { font-size: 0.9rem; }
   color: var(--primary);
   text-shadow: 0 0 8px var(--primary-glow);
   font-weight: 600;
+}
+.glow-text-warning {
+  color: var(--warning);
+  text-shadow: 0 0 8px var(--warning-glow);
+  font-weight: 600;
+}
+.bg-warning {
+  background: var(--warning);
+  color: #000;
+  font-weight: 700;
 }
 
 .stats-card, .trade-card, .trade-form, .empty-state, .profile-section, .settings-section {
