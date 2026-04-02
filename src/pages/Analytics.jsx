@@ -146,9 +146,9 @@ export default function Analytics() {
         <StatCard title="Avg Profit" value={`$${analyticsData.avgPnl}`} subtext="Per Session" icon={Activity} />
       </div>
 
-      <div className="main-content-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '1.5rem' }}>
+      <div className="analytics-main-grid" style={{ display: 'grid', gap: '1.5rem', marginBottom: '2rem' }}>
         {/* Left Column: Charts */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
           {/* Equity Curve */}
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
             <h2 className="panel-title" style={{ paddingLeft: 0, background: 'none', border: 'none' }}>Equity Curve Over Time</h2>

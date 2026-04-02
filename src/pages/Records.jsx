@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getTrades, deleteTrade } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Calendar, TrendingUp, TrendingDown, Clock, Search, Maximize2, Minimize2, Download, X, Filter } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, TrendingUp, TrendingDown, Clock, Search, Maximize2, Minimize2, Download, X, Filter } from 'lucide-react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 export default function Records() {
@@ -247,13 +247,12 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
               </div>
             </td>
             <td style={{ textAlign: 'center' }}>
-              <button 
-                className="icon-btn text-muted hover-danger" 
-                onClick={(e) => onDelete(trade.id, e)}
-                style={{ padding: '0.5rem' }}
+              <div 
+                className="icon-btn text-primary" 
+                style={{ padding: '0.5rem', opacity: 0.7 }}
               >
-                <Trash2 size={18} />
-              </button>
+                <Eye size={18} />
+              </div>
             </td>
           </motion.tr>
         ))}

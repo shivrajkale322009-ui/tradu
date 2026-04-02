@@ -104,6 +104,21 @@ export const getTradeById = async (id) => {
   }
 };
 
+export const updateTrade = async (id, data) => {
+  if (!firestore || !id) return;
+  try {
+    const docRef = doc(firestore, TRADES_COLLECTION, id);
+    const { id: _, userId: __, createdAt: ___, ...updateData } = data;
+    if (updateData.image) {
+      updateData.imageUrl = updateData.image;
+    }
+    await setDoc(docRef, updateData, { merge: true });
+  } catch (err) {
+    console.error('Error updating trade in Firebase', err);
+    throw err;
+  }
+};
+
 export const deleteTrade = async (id) => {
   if (!firestore) return;
   try {

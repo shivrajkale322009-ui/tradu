@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getTradeById, deleteTrade } from '../utils/db';
-import { ArrowLeft, Trash2, Calendar, TrendingUp, TrendingDown, Crosshair, Target, Brain, Smile } from 'lucide-react';
+import { getTradeById, deleteTrade, updateTrade } from '../utils/db';
+import { ArrowLeft, Trash2, Calendar, TrendingUp, TrendingDown, Crosshair, Target, Brain, Smile, Shield, Unlock, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function TradeDetails() {
@@ -10,10 +10,25 @@ export default function TradeDetails() {
   const { currentUser } = useAuth();
   const [trade, setTrade] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isLocked, setIsLocked] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     loadTrade();
   }, [id]);
+
+  const handleUpdate = async () => {
+    setIsSaving(true);
+    try {
+      await updateTrade(id, trade);
+      setIsLocked(true);
+    } catch (error) {
+      console.error("Update failed", error);
+      alert("System error: Failed to sync data.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const loadTrade = async () => {
     const data = await getTradeById(id);
@@ -44,52 +59,94 @@ export default function TradeDetails() {
           </Link>
           <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Trade Details</h1>
         </div>
-        {currentUser && trade.userId === currentUser.uid && (
-          <button onClick={handleDelete} className="icon-btn text-danger">
-            <Trash2 size={20} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button 
+            onClick={() => setIsLocked(!isLocked)} 
+            className={`btn-outline ${!isLocked ? 'glow-text-primary' : ''}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: !isLocked ? '1px solid var(--primary)' : '1px solid var(--border)' }}
+          >
+            {isLocked ? (
+              <><Shield size={18} /> Lock View</>
+            ) : (
+              <><Unlock size={18} className="text-primary" /> Edit Active</>
+            )}
           </button>
-        )}
+          {currentUser && trade.userId === currentUser.uid && !isLocked && (
+            <button onClick={handleDelete} className="icon-btn text-danger">
+              <Trash2 size={20} />
+            </button>
+          )}
+        </div>
       </header>
       
       <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: 'var(--radius-lg)' }}>
-        <div className="details-header" style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center',
-          borderBottom: '1px solid var(--border)',
-          paddingBottom: '1rem',
-          marginBottom: '1rem'
-        }}>
-          <div>
-            <h2 className="pair-title">{trade.pair}</h2>
-            <div className="badges-row" style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-              <span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`}>
-                {(trade.type || 'long') === 'long' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                {(trade.type || 'long').toUpperCase()}
-              </span>
-              <span className="badge bg-muted">
-                <Calendar size={14} />
-                {trade.date} {trade.time && `• ${trade.time}`}
-              </span>
-              {trade.emotion && trade.emotion !== 'neutral' && (
-                <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--border)' }}>
-                  <Smile size={14} className="text-primary" />
-                  {trade.emotion.toUpperCase()}
-                </span>
-              )}
-            </div>
-            {trade.strategy && (
-              <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                <Brain size={14} />
-                <span>Strategy: <strong style={{ color: 'var(--text-primary)' }}>{trade.strategy}</strong></span>
+        <div className="details-header" style={{ paddingBottom: '1.5rem', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ flex: 1 }}>
+            {isLocked ? (
+              <h2 className="pair-title" style={{ fontSize: '1.5rem', marginBottom: '0.75rem' }}>{trade.pair}</h2>
+            ) : (
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label style={{ fontSize: '0.7rem' }}>Asset Pair</label>
+                <input 
+                  className="input" 
+                  value={trade.pair} 
+                  onChange={(e) => setTrade({...trade, pair: e.target.value})}
+                  style={{ fontSize: '1.2rem', fontWeight: 700 }}
+                />
               </div>
             )}
-          </div>
-          <div className="pnl-massive">
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>PnL</span>
-            <div className={`pnl-value ${trade.pnl >= 0 ? 'profit' : 'loss'}`}>
-              ${Number(trade.pnl).toFixed(2)}
+            
+            <div className="badges-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+              {isLocked ? (
+                <>
+                <span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`}>
+                  {(trade.type || 'long') === 'long' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                  {(trade.type || 'long').toUpperCase()}
+                </span>
+                <span className="badge bg-muted">
+                  <Calendar size={14} />
+                  {trade.date} {trade.time && `• ${trade.time}`}
+                </span>
+                </>
+              ) : (
+                <>
+                <select 
+                  className="input" 
+                  value={trade.type || 'long'} 
+                  onChange={(e) => setTrade({...trade, type: e.target.value})}
+                  style={{ width: '120px', padding: '0.4rem' }}
+                >
+                  <option value="long">LONG</option>
+                  <option value="short">SHORT</option>
+                </select>
+                <input 
+                  type="date" 
+                  className="input" 
+                  value={trade.date} 
+                  onChange={(e) => setTrade({...trade, date: e.target.value})}
+                  style={{ width: '160px', padding: '0.4rem' }}
+                />
+                </>
+              )}
             </div>
+          </div>
+
+          <div style={{ textAlign: 'right', minWidth: '120px' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>PnL Performance</span>
+            {isLocked ? (
+              <div className={`pnl-value ${trade.pnl >= 0 ? 'profit' : 'loss'}`} style={{ fontSize: '1.75rem', fontWeight: 800 }}>
+                ${Number(trade.pnl).toFixed(2)}
+              </div>
+            ) : (
+              <input 
+                type="number" 
+                className="input" 
+                step="any"
+                value={trade.pnl} 
+                onChange={(e) => setTrade({...trade, pnl: e.target.value})}
+                style={{ fontSize: '1.5rem', fontWeight: 800, textAlign: 'right', marginTop: '0.5rem', color: trade.pnl >= 0 ? 'var(--success)' : 'var(--danger)' }}
+              />
+            )}
           </div>
         </div>
 
@@ -123,6 +180,18 @@ export default function TradeDetails() {
           </div>
         )}
 
+        {!isLocked && (
+          <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button 
+              className="btn-primary" 
+              onClick={handleUpdate} 
+              disabled={isSaving}
+              style={{ minWidth: '160px' }}
+            >
+              {isSaving ? 'Syncing...' : <><Save size={18} /> Commit Changes</>}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
