@@ -14,12 +14,20 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
-  const [isSystemActive, setIsSystemActive] = useState(false);
+  const [isSystemActive, setIsSystemActive] = useState(() => {
+    // Check if boot has already played in this session
+    return sessionStorage.getItem('bootPlayed') === 'true';
+  });
+
+  const handleBootComplete = () => {
+    sessionStorage.setItem('bootPlayed', 'true');
+    setIsSystemActive(true);
+  };
 
   return (
     <ErrorBoundary>
       <AnimatePresence>
-        {!isSystemActive && <SystemLoader key="loader" onComplete={() => setIsSystemActive(true)} />}
+        {!isSystemActive && <SystemLoader key="loader" onComplete={handleBootComplete} />}
       </AnimatePresence>
 
       <Router>

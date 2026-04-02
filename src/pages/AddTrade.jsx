@@ -4,54 +4,217 @@ import { saveTrade, getUserProfile } from '../utils/db';
 import { ImagePlus, X, AlertCircle, ShieldCheck, Database, Cpu, Zap, Check, ArrowRight, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { soundEngine } from '../utils/SoundEngine';
 
-const SyncOverlay = ({ progress, status }) => (
-  <motion.div 
-    initial={{ opacity: 0 }} 
-    animate={{ opacity: 1 }} 
-    exit={{ opacity: 0 }}
-    style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(5, 10, 21, 0.98)',
-      zIndex: 9999,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      backdropFilter: 'blur(10px)',
-      padding: '2rem', textAlign: 'center'
-    }}
-  >
-    <div style={{ position: 'relative', marginBottom: '2rem' }}>
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        style={{ width: '120px', height: '120px', border: '2px dashed var(--primary)', borderRadius: '50%', opacity: 0.3 }}
-      />
-      <motion.div
-        animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: 'var(--primary)' }}
-      >
-        {status === 'success' ? <ShieldCheck size={48} /> : <Database size={48} />}
+const SaveHUD = ({ progress, status, tradeData }) => {
+  const [typedText, setTypedText] = useState('');
+  const [flickerVal, setFlickerVal] = useState('0');
+  const hudControls = useAnimation();
+  const processingRef = useRef(null);
+
+  const sequences = [
+    "BOOT_SEQUENCE: INITIALIZING...",
+    "INITIALIZING_TRADE_CORE...",
+    "SYNCING_MARKET_DATA...",
+    "VALIDATING_ENTRY...",
+    "EXECUTING_SAVE_PROTOCOL..."
+  ];
+
+  useEffect(() => {
+    if (status === 'syncing') {
+      soundEngine.playTap();
+      setTimeout(() => soundEngine.playWhoosh(), 100);
+      processingRef.current = soundEngine.playProcessing();
+
+      // Typing effect
+      let charIdx = 0;
+      let seqIdx = 0;
+      const typeInterval = setInterval(() => {
+        if (seqIdx < sequences.length) {
+          setTypedText(sequences[seqIdx].slice(0, charIdx + 1));
+          charIdx++;
+          if (charIdx >= sequences[seqIdx].length) {
+            seqIdx++;
+            charIdx = 0;
+          }
+        }
+        setFlickerVal(Math.floor(Math.random() * 1000000).toString(16).toUpperCase());
+      }, 50);
+
+      return () => {
+        clearInterval(typeInterval);
+        if (processingRef.current) processingRef.current.stop();
+      };
+    } else if (status === 'success') {
+      if (processingRef.current) processingRef.current.stop();
+      soundEngine.playSuccess();
+      setTypedText("TRADE STORED SUCCESSFULLY");
+    }
+  }, [status]);
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        background: 'rgba(5, 10, 25, 0.95)',
+        zIndex: 9999,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        backdropFilter: 'blur(15px)',
+        padding: '2rem', textAlign: 'center',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Background HUD Grid */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
+        backgroundImage: 'radial-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px)', 
+        backgroundSize: '30px 30px', opacity: 0.2, pointerEvents: 'none' }} />
+      
+      {/* Scanning Line */}
+      {status === 'syncing' && (
+        <motion.div 
+          animate={{ y: ['0%', '100%'] }} 
+          transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+          style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'var(--primary)', opacity: 0.1, boxShadow: '0 0 10px var(--primary-glow)', zIndex: 1 }}
+        />
+      )}
+
+      {/* Main HUD Module */}
+      <motion.div animate={hudControls} style={{ position: 'relative', marginBottom: '2.5rem', zIndex: 10 }}>
+        {/* Outer hud ring */}
+        <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            style={{ position: 'relative', width: '200px', height: '200px' }}
+        >
+          {/* Outer dashed ring */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            style={{ 
+              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+              border: `1px dashed ${status === 'success' ? 'var(--success)' : 'var(--primary)'}`, 
+              borderRadius: '50%',
+              opacity: 0.4
+            }}
+          />
+          
+          {/* Inner solid ring */}
+          <motion.div
+            animate={{ rotate: -360 }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            style={{ 
+              position: 'absolute', top: '15px', left: '15px', right: '15px', bottom: '15px',
+              border: `2px solid ${status === 'success' ? 'var(--success)' : 'rgba(0, 240, 255, 0.2)'}`, 
+              borderRadius: '50%',
+              boxShadow: status === 'success' ? '0 0 30px var(--success-glow)' : '0 0 15px var(--primary-glow)'
+            }}
+          />
+
+          {/* Radar Sweep */}
+          {status !== 'success' && (
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'conic-gradient(from 0deg, var(--primary) 0deg, transparent 60deg)', borderRadius: '50%', opacity: 0.1 }}
+            />
+          )}
+
+          {/* Center Content */}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <AnimatePresence mode="wait">
+              {status === 'success' ? (
+                <motion.div 
+                  key="check" 
+                  initial={{ scale: 0, rotate: -45 }} 
+                  animate={{ scale: 1.2, rotate: 0 }} 
+                  transition={{ type: 'spring' }}
+                >
+                  <Check size={70} className="text-success" style={{ filter: 'drop-shadow(0 0 15px var(--success-glow))' }} />
+                </motion.div>
+              ) : (
+                <motion.div 
+                   key="core" 
+                   initial={{ opacity: 0 }} 
+                   animate={{ opacity: 1 }}
+                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                >
+                   <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                     <Cpu size={60} className="text-primary" />
+                   </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {/* Orbital Data Particles */}
+          {status !== 'success' && [...Array(5)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 3 + i, repeat: Infinity, ease: "linear" }}
+              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            >
+              <div style={{ 
+                width: '4px', height: '4px', background: 'var(--primary)', 
+                borderRadius: '50%', position: 'absolute', top: '-2px', left: '50%',
+                boxShadow: '0 0 8px var(--primary)'
+              }} />
+            </motion.div>
+          ))}
+        </motion.div>
       </motion.div>
-    </div>
 
-    <div style={{ width: '100%', maxWidth: '300px', background: 'rgba(255,255,255,0.05)', height: '4px', borderRadius: '2px', overflow: 'hidden', marginBottom: '1rem' }}>
-      <motion.div 
-        initial={{ width: 0 }}
-        animate={{ width: `${progress}%` }}
-        style={{ height: '100%', background: 'var(--primary)', boxShadow: '0 0 10px var(--primary-glow)' }}
-      />
-    </div>
+      {/* Boot Text & Progress */}
+      <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
+         <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: status === 'success' ? 'var(--success)' : 'var(--primary)', marginBottom: '1rem', minHeight: '1.2rem', letterSpacing: '0.05em' }}>
+            {typedText}<motion.span animate={{ opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 0.5 }}>_</motion.span>
+         </div>
+         
+         <div style={{ width: '100%', background: 'rgba(0, 240, 255, 0.05)', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '1.5rem', position: 'relative', border: '1px solid rgba(0, 240, 255, 0.1)' }}>
+            <motion.div 
+               animate={{ width: `${progress}%` }}
+               style={{ 
+                  height: '100%', 
+                  background: status === 'success' ? 'var(--success)' : 'linear-gradient(90deg, var(--primary), var(--secondary))', 
+                  boxShadow: status === 'success' ? '0 0 20px var(--success-glow)' : '0 0 15px var(--primary-glow)' 
+               }}
+            >
+               {/* Moving highlight streak */}
+               <motion.div 
+                  animate={{ x: ['-100%', '400%'] }} 
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  style={{ width: '30%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }}
+               />
+            </motion.div>
+         </div>
 
-    <div style={{ fontFamily: 'monospace', color: 'var(--primary)', fontSize: '0.8rem', letterSpacing: '0.1em' }}>
-      {progress < 30 && "INITIALIZING ENCRYPTED TUNNEL..."}
-      {progress >= 30 && progress < 60 && "UPLOADING PACKETS TO GRID..."}
-      {progress >= 60 && progress < 90 && "BYPASSING LATENCY BARRIERS..."}
-      {progress >= 90 && progress < 100 && "VALIDATING CHECKSUM..."}
-      {progress === 100 && "DATA SYNC SUCCESSFUL. RECORDS SECURED."}
-    </div>
-  </motion.div>
-);
+         {status === 'success' && tradeData && (
+           <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}
+           >
+              <div className="badge bg-success" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 0 15px var(--success-glow)' }}>
+                 +${Number(tradeData.pnl).toFixed(2)} SECURED
+              </div>
+           </motion.div>
+         )}
+      </div>
+
+      {/* Terminal Metadata Footer */}
+      <div style={{ position: 'absolute', bottom: '2rem', display: 'flex', gap: '3rem', opacity: 0.4, fontFamily: 'monospace', fontSize: '0.6rem' }}>
+         <div>PROTOCOL: SAVE_TRADU_v1</div>
+         <div>SECURITY: AES_256</div>
+         <div>HASH: {flickerVal}</div>
+      </div>
+    </motion.div>
+  );
+};
 
 export default function AddTrade() {
   const { currentUser } = useAuth();
@@ -444,7 +607,7 @@ export default function AddTrade() {
       </form>
 
       <AnimatePresence>
-        {isSubmitting && <SyncOverlay progress={syncProgress} status={syncStatus} tradeData={formData} />}
+        {isSubmitting && <SaveHUD progress={syncProgress} status={syncStatus} tradeData={formData} />}
       </AnimatePresence>
     </div>
   );
