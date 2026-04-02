@@ -12,6 +12,7 @@ export default function Profile() {
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
   const [fontSize, setFontSize] = useState(16);
   const [capital, setCapital] = useState(0);
+  const [favouritePairs, setFavouritePairs] = useState([]);
   const [newPair, setNewPair] = useState('');
   const [isMigrating, setIsMigrating] = useState(false);
   const [migrationData, setMigrationData] = useState('');
