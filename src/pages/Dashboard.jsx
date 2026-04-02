@@ -282,12 +282,7 @@ export default function Dashboard() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="glass-panel" style={{ padding: '1.5rem', textAlign: 'center' }}>
-            <div className="metric-label" style={{ justifyContent: 'center', marginBottom: '0.5rem' }}>Current Balance</div>
-            <div className="glow-text-success" style={{ fontSize: '2rem', fontWeight: 800 }}>
-              <AnimatedCounter value={10000 + stats.totalPnl} prefix="$" decimals={2}/>
-            </div>
-          </div>
+
           <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CircularProgress value={stats.winRate} size={140} strokeWidth={12} color="var(--primary)" />
           </div>
