@@ -36,6 +36,7 @@ function App() {
           <ThemeProvider>
             <div className="app-layout">
               <MatrixBackground />
+              <Navigation />
               <main className="main-content">
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
@@ -46,7 +47,6 @@ function App() {
                   <Route path="/analytics" element={<Analytics />} />
                 </Routes>
               </main>
-              <Navigation />
             </div>
           </ThemeProvider>
         </AuthProvider>
