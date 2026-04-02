@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo } from 'react';
 import { getTrades, deleteTrade, getUserProfile } from '../utils/db';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
