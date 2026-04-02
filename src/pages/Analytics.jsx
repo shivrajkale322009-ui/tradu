@@ -132,9 +132,9 @@ export default function Analytics() {
 
     return {
       totalTrades: trades.length,
-      winRate: winRate.toFixed(1),
-      totalPnl: totalPnl.toFixed(2),
-      avgPnl: (totalPnl / trades.length).toFixed(2),
+      winRate: winRate,
+      totalPnl: totalPnl,
+      avgPnl: (totalPnl / (trades.length || 1)),
       wins: wins.length,
       losses: losses.length,
       c2c: c2cArr.length,
@@ -236,10 +236,10 @@ export default function Analytics() {
       </header>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <StatCard title="Win Rate" value={`${analyticsData.winRate.toFixed(1)}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--success)" />
-        <StatCard title="Net PnL" value={`$${analyticsData.totalPnl.toFixed(2)}`} subtext="Collective Gains" icon={Wallet} color="var(--primary)" />
+        <StatCard title="Win Rate" value={`${Number(analyticsData.winRate).toFixed(1)}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--success)" />
+        <StatCard title="Net PnL" value={`$${Number(analyticsData.totalPnl).toFixed(2)}`} subtext="Collective Gains" icon={Wallet} color="var(--primary)" />
         <StatCard title="Total Volume" value={analyticsData.totalTrades} subtext="Trades Logged" icon={BarChart3} color="var(--secondary)" />
-        <StatCard title="Avg Profit" value={`$${analyticsData.avgPnl}`} subtext="Per Session" icon={Activity} />
+        <StatCard title="Avg Profit" value={`$${Number(analyticsData.avgPnl).toFixed(2)}`} subtext="Per Session" icon={Activity} />
       </div>
 
       {/* STRATEGIC PERFORMANCE MATRIX (v5.0) */}
