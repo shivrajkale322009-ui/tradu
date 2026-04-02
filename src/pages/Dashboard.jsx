@@ -374,7 +374,7 @@ const JournalTable = ({ trades, navigate, isExpanded }) => (
                 if (isNaN(date.getTime())) return <>{trade.date}<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span></>;
                 return (
                   <>
-                    {date.toLocaleDateString()}<br/>
+                    {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}<br/>
                     <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>
                       {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>

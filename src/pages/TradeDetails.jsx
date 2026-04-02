@@ -122,7 +122,7 @@ export default function TradeDetails() {
                     const utcString = `${trade.date}T${trade.time}Z`;
                     const date = new Date(utcString);
                     if (isNaN(date.getTime())) return <>{trade.date} {trade.time}</>;
-                    return `${date.toLocaleDateString()} • ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                    return `${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} • ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
                   })()}
                 </span>
                 {trade.strategy && (
