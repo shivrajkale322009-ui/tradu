@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getTrades, getUserProfile } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area 
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { 
-  TrendingUp, TrendingDown, Target, Zap, Clock, Brain, 
+  TrendingUp, TrendingDown, Target, Zap, Clock, Brain, Wallet,
   BarChart3, PieChart as PieIcon, Activity, Flame, AlertTriangle, Info
 } from 'lucide-react';
 
@@ -26,7 +27,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend, color = 'var(--pri
       </div>
     </div>
     <div className="metric-value" style={{ fontSize: '1.25rem', color: '#fff' }}>{value}</div>
-    <div style={{ fontSize: '0.65rem', color: trend >= 0 ? 'var(--success)' : 'var(--danger)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+    <div style={{ fontSize: '0.65rem', color: (trend >= 0 || trend === undefined) ? 'var(--success)' : 'var(--danger)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
       {trend !== undefined && (trend >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />)}
       {subtext}
     </div>
@@ -35,6 +36,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend, color = 'var(--pri
 
 export default function Analytics() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [trades, setTrades] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -88,7 +90,6 @@ export default function Analytics() {
     const emotionalData = Object.values(emotionMap);
 
     // Streaks
-    let currentStreak = 0;
     let maxWinStreak = 0;
     let maxLossStreak = 0;
     let lastType = null;
@@ -131,7 +132,45 @@ export default function Analytics() {
   }, [trades]);
 
   if (loading) return <div className="page-container loading">PROCESSING_DATA_STREAMS...</div>;
-  if (!analyticsData) return <div className="page-container">No trade metadata found. Start logging to see analytics.</div>;
+
+  if (!analyticsData) {
+    return (
+      <div className="page-container">
+        <header className="header" style={{ marginBottom: '1.5rem' }}>
+          <h1>Unified Analytics</h1>
+        </header>
+
+        <div className="glass-panel" style={{ 
+          padding: '4rem 2rem', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          gap: '1.5rem',
+          textAlign: 'center',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px dashed var(--border)'
+        }}>
+          <div style={{ padding: '1.5rem', borderRadius: '50%', background: 'rgba(0, 240, 255, 0.05)', color: 'var(--primary)', marginBottom: '1rem' }}>
+            <Activity size={48} />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', margin: 0 }}>NO_SESSIONS_RECORDED</h2>
+          <p style={{ color: 'var(--text-muted)', maxWidth: '400px', fontSize: '0.9rem', lineHeight: '1.6' }}>
+            The current active journal has no trade sessions recorded. Once you or your partner log the first trade, your tactical performance metrics will initialize here.
+          </p>
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/add')}
+            className="btn-primary"
+            style={{ marginTop: '1rem', padding: '0.75rem 2rem' }}
+          >
+            INITIATE_FIRST_TRADE
+          </motion.button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container" style={{ maxWidth: '1200px' }}>
@@ -141,19 +180,16 @@ export default function Analytics() {
         </h1>
         <p className="text-muted" style={{ fontSize: '0.8rem' }}>Strategic performance matrix and behavioral insights.</p>
       </header>
-
-      {/* Overview Grid */}
-      <div className="responsive-grid" style={{ marginBottom: '2rem' }}>
-        <StatCard title="Total Volume" value={analyticsData.totalTrades} subtext="Trades Logged" icon={BarChart3} />
-        <StatCard title="Win Rate" value={`${analyticsData.winRate}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--secondary)" trend={analyticsData.winRate - 50} />
-        <StatCard title="Net P&L" value={`$${analyticsData.totalPnl}`} subtext="Total Profit" icon={Zap} color={analyticsData.totalPnl >= 0 ? 'var(--success)' : 'var(--danger)'} trend={analyticsData.totalPnl} />
+      
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+        <StatCard title="Win Rate" value={`${analyticsData.winRate}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--success)" />
+        <StatCard title="Net PnL" value={`$${analyticsData.totalPnl}`} subtext="Collective Gains" icon={Wallet} color="var(--primary)" />
+        <StatCard title="Total Volume" value={analyticsData.totalTrades} subtext="Trades Logged" icon={BarChart3} color="var(--secondary)" />
         <StatCard title="Avg Profit" value={`$${analyticsData.avgPnl}`} subtext="Per Session" icon={Activity} />
       </div>
 
       <div className="analytics-main-grid" style={{ display: 'grid', gap: '1.5rem', marginBottom: '2rem' }}>
-        {/* Left Column: Charts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
-          {/* Equity Curve */}
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
             <h2 className="panel-title" style={{ paddingLeft: 0, background: 'none', border: 'none' }}>Equity Curve Over Time</h2>
             <div style={{ height: '300px', width: '100%', marginTop: '1rem' }}>
@@ -177,8 +213,7 @@ export default function Analytics() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-            {/* Strategy Performance */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
               <h2 className="panel-title" style={{ paddingLeft: 0, background: 'none', border: 'none' }}>Strategy Performance</h2>
               <div style={{ height: '250px', width: '100%', marginTop: '1rem' }}>
@@ -197,7 +232,6 @@ export default function Analytics() {
               </div>
             </div>
 
-            {/* Emotional Impact */}
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
               <h2 className="panel-title" style={{ paddingLeft: 0, background: 'none', border: 'none' }}>Psychology Matrix</h2>
               <div style={{ height: '250px', width: '100%', marginTop: '1rem' }}>
@@ -225,7 +259,6 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Right Column: Key Metrics & Streaks */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="glass-panel" style={{ padding: '1rem' }}>
             <h3 style={{ fontSize: '0.8rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -240,7 +273,7 @@ export default function Analytics() {
                 <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                     <motion.div 
                         initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(100, Math.abs(e.pnl / Number(analyticsData.totalPnl)) * 100)}%` }}
+                        animate={{ width: `${Math.min(100, Math.abs(e.pnl / (Number(analyticsData.totalPnl) || 1)) * 100)}%` }}
                         style={{ height: '100%', background: e.pnl >= 0 ? 'var(--success)' : 'var(--danger)' }}
                     />
                 </div>
@@ -255,11 +288,11 @@ export default function Analytics() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Best Performance</span>
-                <span className="text-success" style={{ fontWeight: 600 }}>+${analyticsData.bestTrade?.pnl}</span>
+                <span className="text-success" style={{ fontWeight: 600 }}>+${analyticsData.bestTrade?.pnl || 0}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Max Drawdown</span>
-                <span className="text-danger" style={{ fontWeight: 600 }}>-${Math.abs(analyticsData.worstTrade?.pnl)}</span>
+                <span className="text-danger" style={{ fontWeight: 600 }}>-${Math.abs(analyticsData.worstTrade?.pnl || 0)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Win Streak</span>
@@ -277,9 +310,7 @@ export default function Analytics() {
               <Brain size={14} className="text-primary" /> AI_INSIGHT
             </h3>
             <p style={{ fontSize: '0.7rem', lineHeight: '1.4', color: 'var(--text-muted)' }}>
-              {analyticsData.maxWinStreak > 3 ? "SYSTEM: Consecutive wins detected. Recommended: Tighten risk protocol to protect gains." : "SYSTEM: Analyzing behavior patterns... Maintain discipline in next execution."}
-              <br/><br/>
-              {analyticsData.emotionalData.find(e => e.name === 'fear' && e.pnl < 0) ? "ALERT: Negative PnL during FEAR sessions. Suggestion: Reduce position size." : "HUD: Psychology levels within stable range."}
+              {analyticsData.maxWinStreak > 3 ? "SYSTEM: Consecutive wins detected. Recommended: Tighten risk protocol to protect gains." : "HUD: Psychology levels within stable range."}
             </p>
           </div>
         </div>

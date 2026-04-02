@@ -1,5 +1,5 @@
 import { db as firestore, storage } from './firebase';
-import { collection, addDoc, getDocs, doc, getDoc, setDoc, deleteDoc, query, orderBy, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, getDoc, setDoc, deleteDoc, query, orderBy, where, or } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 const TRADES_COLLECTION = 'trades';
@@ -113,7 +113,10 @@ export const getTrades = async (journalId) => {
   try {
     const q = query(
       collection(firestore, TRADES_COLLECTION),
-      where('journalId', '==', journalId)
+      or(
+        where('journalId', '==', journalId),
+        where('userId', '==', journalId)
+      )
     );
     const querySnapshot = await getDocs(q);
     
