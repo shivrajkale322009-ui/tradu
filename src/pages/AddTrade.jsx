@@ -383,8 +383,8 @@ export default function AddTrade() {
         <h1>Log New Trade</h1>
       </header>
       
-      <form onSubmit={handleSubmit} className="trade-form">
-        <div className="form-group">
+      <form onSubmit={handleSubmit} className="trade-form responsive-grid">
+        <div className="form-group grid-full">
           <label>Pair/Ticker</label>
           {!isCustomPair ? (
             <select
@@ -427,15 +427,15 @@ export default function AddTrade() {
           )}
         </div>
 
-        <div className="form-group row">
-          <div className="flex-1">
+        <div className="form-group-row-responsive">
+          <div className="form-group flex-1">
             <label>Trade Type</label>
             <select name="type" value={formData.type} onChange={handleChange} className="input">
               <option value="long">Long</option>
               <option value="short">Short</option>
             </select>
           </div>
-          <div className="flex-1">
+          <div className="form-group flex-1">
             <label>Date</label>
             <input
               type="date"
@@ -446,7 +446,7 @@ export default function AddTrade() {
               required
             />
           </div>
-          <div className="flex-1">
+          <div className="form-group flex-1">
             <label>Time</label>
             <input
               type="time"
@@ -459,8 +459,8 @@ export default function AddTrade() {
           </div>
         </div>
 
-        <div className="form-group row">
-          <div className="flex-1">
+        <div className="form-group-row-responsive">
+          <div className="form-group flex-1">
             <label>Profit/Loss ($)</label>
             <input
               type="number"
@@ -473,7 +473,7 @@ export default function AddTrade() {
               required
             />
           </div>
-          <div className="flex-1">
+          <div className="form-group flex-1">
             <label>Strategy / Setup</label>
             <select
               name="strategy"
@@ -488,7 +488,7 @@ export default function AddTrade() {
           </div>
         </div>
 
-        <div className="form-group">
+        <div className="form-group grid-full">
           <label>Emotional State</label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
             {[
@@ -520,7 +520,7 @@ export default function AddTrade() {
           </div>
         </div>
 
-        <div className="form-group">
+        <div className="form-group grid-full">
           <label>Notes / Lessons</label>
           <textarea
             name="notes"
@@ -532,7 +532,7 @@ export default function AddTrade() {
           ></textarea>
         </div>
 
-        <div className="form-group">
+        <div className="form-group grid-full">
           <label>Chart Image</label>
           <div className="image-upload-container">
             {!imagePreview ? (
