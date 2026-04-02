@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getUserProfile, updateUserProfile, saveTrade } from '../utils/db';
-import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2 } from 'lucide-react';
+import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
