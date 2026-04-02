@@ -199,9 +199,6 @@ export default function Profile() {
             closingTimeUTC = istClose.toISOString();
           }
 
-          const seqNo = parseInt(seq) || count;
-          lastSeq = Math.max(lastSeq, seqNo);
-
           await saveTrade({
             date: datePart,
             time: timePart,
@@ -210,7 +207,6 @@ export default function Profile() {
             type: type.toLowerCase(),
             lots: lots || '0.01',
             pnl: parseFloat(pnl) || 0,
-            tradeNo: seqNo,
             strategy: '',
             emotion: 'neutral',
             quality: 'a1',
@@ -219,8 +215,7 @@ export default function Profile() {
         }
       }
 
-      setMigrationStatus('SYNCING_COUNTERS...');
-      await updateUserProfile(currentUser.uid, { tradeCounter: lastSeq });
+      setMigrationStatus('MIGRATION_SUCCESSFUL');
       
       setMigrationStatus('MIGRATION_SUCCESSFUL');
       alert(`MIGRATION_COMPLETE: ${count} sessions successfully integrated into your archive.`);

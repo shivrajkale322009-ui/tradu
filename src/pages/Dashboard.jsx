@@ -159,6 +159,14 @@ export default function Dashboard() {
     });
   }, [trades, timeFilter]);
 
+  const masterChronological = useMemo(() => {
+    return [...trades].sort((a, b) => {
+      const tA = new Date(`${a.date}T${a.time}Z`).getTime();
+      const tB = new Date(`${b.date}T${b.time}Z`).getTime();
+      return tA - tB;
+    });
+  }, [trades]);
+
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
     const todayTrades = filteredTrades.filter(t => t.date === today);
@@ -313,7 +321,7 @@ export default function Dashboard() {
             </div>
           </h2>
           <div style={{ overflowX: 'auto' }}>
-            <JournalTable trades={filteredTrades} navigate={navigate} />
+            <JournalTable trades={filteredTrades} masterChronological={masterChronological} navigate={navigate} />
           </div>
         </motion.div>
 
@@ -333,7 +341,7 @@ export default function Dashboard() {
               </div>
               <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                  <JournalTable trades={filteredTrades} navigate={navigate} isExpanded={true} />
+                  <JournalTable trades={filteredTrades} masterChronological={masterChronological} navigate={navigate} isExpanded={true} />
                 </div>
               </div>
             </motion.div>
@@ -344,7 +352,7 @@ export default function Dashboard() {
   );
 }
 
-const JournalTable = ({ trades, navigate, isExpanded }) => (
+const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => (
   <table className={`sci-fi-table ${isExpanded ? 'expanded-mode' : ''}`} style={{ width: '100%', textAlign: 'left' }}>
     <thead style={{ position: isExpanded ? 'sticky' : 'static', top: 0, zIndex: 10 }}>
       <tr>
@@ -364,7 +372,7 @@ const JournalTable = ({ trades, navigate, isExpanded }) => (
             style={{ cursor: 'pointer' }} className="row-glow"
           >
             <td style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', fontFamily: 'monospace' }}>
-              #{String(trade.tradeNo || trades.length - idx).padStart(3, '0')}
+              #{String(masterChronological.findIndex(mt => mt.id === trade.id) + 1).padStart(3, '0')}
             </td>
             <td style={{ color: 'var(--text-muted)', fontSize: isExpanded ? '0.9rem' : '0.8rem', padding: isExpanded ? '1.5rem 1rem' : '1rem' }}>
               {(() => {

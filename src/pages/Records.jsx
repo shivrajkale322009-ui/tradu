@@ -72,11 +72,21 @@ export default function Records() {
     }
   }, [isExpanded]);
 
-  const sortedTrades = [...trades].sort((a, b) => {
-     const timeA = new Date(`${a.date}T${a.time}Z`).getTime();
-     const timeB = new Date(`${b.date}T${b.time}Z`).getTime();
-     return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
-  });
+  const masterChronological = useMemo(() => {
+    return [...trades].sort((a, b) => {
+      const tA = new Date(`${a.date}T${a.time}Z`).getTime();
+      const tB = new Date(`${b.date}T${b.time}Z`).getTime();
+      return tA - tB;
+    });
+  }, [trades]);
+
+  const sortedTrades = useMemo(() => {
+    return [...trades].sort((a, b) => {
+      const timeA = new Date(`${a.date}T${a.time}Z`).getTime();
+      const timeB = new Date(`${b.date}T${b.time}Z`).getTime();
+      return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+    });
+  }, [trades, sortOrder]);
 
   const filteredTrades = sortedTrades.filter(t => 
     t.pair?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -151,6 +161,7 @@ export default function Records() {
               onNavigate={navigate}
               sortOrder={sortOrder}
               onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+              masterChronological={masterChronological}
             />
           </motion.div>
         </motion.div>
@@ -200,6 +211,7 @@ export default function Records() {
                     onNavigate={navigate}
                     sortOrder={sortOrder}
                     onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                    masterChronological={masterChronological}
                   />
                 </div>
               </div>
@@ -211,7 +223,7 @@ export default function Records() {
   );
 }
 
-const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrder, onToggleSort }) => (
+const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrder, onToggleSort, masterChronological }) => (
   <table className={`sci-fi-table ${isExpanded ? 'expanded-mode' : ''} ${isWide ? 'wide-mode' : ''}`}>
     <thead style={{ position: (isExpanded || isWide) ? 'sticky' : 'static', top: 0, zIndex: 10 }}>
       <tr>
@@ -247,7 +259,7 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
             className="row-glow"
           >
             <td style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace' }}>
-              #{String(trade.tradeNo || (sortOrder === 'asc' ? idx + 1 : trades.length - idx)).padStart(3, '0')}
+              #{String(masterChronological.findIndex(mt => mt.id === trade.id) + 1).padStart(3, '0')}
             </td>
             <td style={{ color: 'var(--text-muted)', fontSize: (isExpanded || isWide) ? '0.9rem' : '0.8rem', padding: (isExpanded || isWide) ? '1.5rem 1rem' : '1rem' }}>
               {(() => {

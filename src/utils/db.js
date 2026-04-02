@@ -83,15 +83,11 @@ export const saveTrade = async (trade, userId, journalId) => {
   try {
     const { image, ...tradeDataWithoutImage } = trade;
     
-    // Determine the next trade sequence number
-    const nextTradeNo = (trade.tradeNo) ? trade.tradeNo : (await getTrades(targetJournalId)).length + 1;
-    
     const newTrade = {
       ...tradeDataWithoutImage,
       imageUrl: image || null,
       userId, // who recorded it
       journalId: targetJournalId, // where it belongs
-      tradeNo: nextTradeNo,
       createdAt: new Date().toISOString(),
       timestamp: Date.now()
     };
