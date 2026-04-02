@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getUserProfile, updateUserProfile } from '../utils/db';
+import { getUserProfile, updateUserProfile, saveTrade } from '../utils/db';
 import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,9 @@ export default function Profile() {
   const [fontSize, setFontSize] = useState(16);
   const [capital, setCapital] = useState(0);
   const [newPair, setNewPair] = useState('');
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migrationData, setMigrationData] = useState('');
+  const [migrationStatus, setMigrationStatus] = useState('');
   const [newStrategy, setNewStrategy] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [photoURL, setPhotoURL] = useState('');
@@ -93,6 +96,57 @@ export default function Profile() {
     await updateUserProfile(currentUser.uid, { displayName: displayName.trim() });
     setIsEditingName(false);
     setIsSaving(false);
+  };
+
+  const handleMigration = async () => {
+    if (!migrationData.trim()) return alert("PASTE_CSV_REQUIRED");
+    if (!window.confirm("INIT_MIGRATION: This will push entries to your database. DO_NOT_REFRESH. Proceed?")) return;
+
+    setIsMigrating(true);
+    setMigrationStatus('PARSING_DATA...');
+
+    try {
+      const lines = migrationData.trim().split('\n');
+      let count = 0;
+      let lastSeq = 0;
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const [date, time, pair, type, pnl, seq] = line.split(',').map(s => s.trim());
+        
+        if (date && pair && type && pnl) {
+          setMigrationStatus(`FEEDING_TRADE: ${++count} / ${lines.length}`);
+          const seqNo = parseInt(seq) || count;
+          lastSeq = Math.max(lastSeq, seqNo);
+
+          // Construct trade object (minimized)
+          await saveTrade({
+            date,
+            time: time || '00:00',
+            pair: pair.toUpperCase(),
+            type: type.toLowerCase(),
+            pnl: parseFloat(pnl) || 0,
+            tradeNo: seqNo,
+            strategy: '',
+            emotion: 'neutral',
+            quality: 'a1',
+            notes: 'MIGRATED_RECORD'
+          }, currentUser.uid);
+        }
+      }
+
+      setMigrationStatus('SYNCING_COUNTERS...');
+      await updateUserProfile(currentUser.uid, { tradeCounter: lastSeq });
+      
+      setMigrationStatus('MIGRATION_SUCCESSFUL');
+      alert(`MIGRATION_COMPLETE: ${count} sessions successfully integrated into your archive.`);
+      setMigrationData('');
+    } catch (err) {
+      console.error(err);
+      setMigrationStatus('MIGRATION_FAILED: CHECK_CONSOLE');
+    } finally {
+      setIsMigrating(false);
+    }
   };
 
   const handleAddPair = async (e) => {
@@ -429,6 +483,46 @@ export default function Profile() {
               </div>
             ))
           )}
+        </div>
+      </div>
+
+      <div className="settings-section" style={{ marginTop: '2.5rem', border: '1px solid rgba(255, 51, 102, 0.4)', borderRadius: '1rem', padding: '2rem', background: 'rgba(255, 51, 102, 0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <Palette size={20} className="text-danger" />
+          <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--danger)' }}>Tactical Archive Migration</h2>
+        </div>
+        
+        <p className="subtitle" style={{ color: 'var(--text-muted)' }}>
+          PASTE_CSV: Feed your historical trade entries (234+) into the terminal database.
+          <br/>
+          <strong>FORMAT:</strong> Date, Time, Pair, Type, PnL, SeqNo
+        </p>
+
+        <textarea
+          className="input"
+          placeholder="8 Dec, 18:55, XAUUSD, SELL, -2.05, 1"
+          value={migrationData}
+          onChange={(e) => setMigrationData(e.target.value)}
+          disabled={isMigrating}
+          style={{ height: '200px', width: '100%', marginBottom: '1.5rem', fontSize: '0.8rem', fontFamily: 'monospace', padding: '1rem' }}
+        />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: '0.75rem', color: isMigrating ? 'var(--primary)' : 'var(--text-muted)', fontFamily: 'monospace' }}>
+            {migrationStatus || 'READY_FOR_FEED'}
+          </div>
+          <button 
+            onClick={handleMigration} 
+            disabled={isMigrating} 
+            className="btn-primary" 
+            style={{ 
+              background: isMigrating ? 'var(--surface-light)' : 'var(--danger)', 
+              borderColor: isMigrating ? 'var(--border)' : 'var(--danger)',
+              opacity: isMigrating ? 0.7 : 1
+            }}
+          >
+            {isMigrating ? 'FEEDING...' : 'INITIALIZE_FEED'}
+          </button>
         </div>
       </div>
     </div>
