@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Clock, User, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Database } from 'lucide-react';
 
 export default function Navigation() {
   return (
@@ -28,6 +28,10 @@ export default function Navigation() {
       <NavLink to="/analytics" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
         <BarChart2 size={20} />
         <span>Analytics</span>
+      </NavLink>
+      <NavLink to="/data" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+        <Database size={20} />
+        <span>Data</span>
       </NavLink>
       <NavLink to="/profile" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
         <User size={20} />

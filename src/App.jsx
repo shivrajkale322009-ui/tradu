@@ -7,6 +7,7 @@ import TradeDetails from './pages/TradeDetails';
 import Profile from './pages/Profile';
 import Records from './pages/Records';
 import Analytics from './pages/Analytics';
+import Data from './pages/Data';
 import Navigation from './components/Navigation';
 import MatrixBackground from './components/MatrixBackground';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -45,6 +46,7 @@ function App() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/records" element={<Records />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/data" element={<Data />} />
                 </Routes>
               </main>
             </div>
