@@ -536,17 +536,31 @@ export default function AddTrade() {
           <label>Chart Image</label>
           <div className="image-upload-container">
             {!imagePreview ? (
-              <label htmlFor="chart-image" className="image-upload-box">
-                <ImagePlus size={32} />
-                <span>Upload Chart Screenshot</span>
-                <input
-                  type="file"
-                  id="chart-image"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden-input"
-                />
-              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <label htmlFor="chart-image" className="image-upload-box" style={{ height: '110px' }}>
+                  <ImagePlus size={24} />
+                  <span style={{ fontSize: '0.75rem' }}>Upload Image</span>
+                  <input
+                    type="file"
+                    id="chart-image"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden-input"
+                  />
+                </label>
+                <label htmlFor="camera-image" className="image-upload-box" style={{ height: '110px', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
+                  <Zap size={24} />
+                  <span style={{ fontSize: '0.75rem' }}>Take Photo</span>
+                  <input
+                    type="file"
+                    id="camera-image"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleImageChange}
+                    className="hidden-input"
+                  />
+                </label>
+              </div>
             ) : (
               <div className="image-preview-wrapper">
                 <img src={imagePreview} alt="Chart Preview" className="image-preview" />
