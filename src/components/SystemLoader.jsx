@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 import { ShieldCheck, Cpu, Check, Lock } from 'lucide-react';
 import { soundEngine } from '../utils/SoundEngine';
 
+// v2.1.0 - Futuristic Auto-Login HUD
 const SystemLoader = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState('booting');
