@@ -293,9 +293,28 @@ export default function Dashboard() {
                     <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="date" hide />
-                <YAxis stroke="var(--text-muted)" fontSize={12} tickFormatter={v => `$${v}`} />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="var(--text-muted)" 
+                  fontSize={10} 
+                  tickLine={false}
+                  axisLine={false}
+                  minTickGap={50}
+                  tickFormatter={(val) => {
+                    const date = new Date(val);
+                    return isNaN(date.getTime()) ? val : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                  }}
+                />
+                <YAxis 
+                  stroke="var(--text-muted)" 
+                  fontSize={10} 
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={v => `$${v}`}
+                  domain={['auto', 'auto']}
+                />
                 <Tooltip content={<CustomTooltip />} />
+                <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
                 <Area type="monotone" dataKey="cumulative" stroke="var(--primary)" strokeWidth={2.5} fill="url(#colorCurve)" animationDuration={1500} />
               </AreaChart>
             </ResponsiveContainer>

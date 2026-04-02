@@ -81,7 +81,7 @@ export const saveTrade = async (trade, userId, journalId) => {
   if (!firestore) return null;
   const targetJournalId = journalId || userId;
   try {
-    const { image, ...tradeDataWithoutImage } = trade;
+    const { image, tradeNo, ...tradeDataWithoutImage } = trade;
     
     const newTrade = {
       ...tradeDataWithoutImage,
@@ -156,7 +156,7 @@ export const updateTrade = async (id, data) => {
   if (!firestore || !id) return;
   try {
     const docRef = doc(firestore, TRADES_COLLECTION, id);
-    const { id: _, userId: __, createdAt: ___, ...updateData } = data;
+    const { id: _, userId: __, createdAt: ___, tradeNo: ____, ...updateData } = data;
     if (updateData.image) {
       updateData.imageUrl = updateData.image;
     }

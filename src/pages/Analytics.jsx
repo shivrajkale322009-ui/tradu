@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area 
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, AreaChart, Area, ReferenceLine 
 } from 'recharts';
 import { motion } from 'framer-motion';
 import { 
@@ -223,12 +223,31 @@ export default function Analytics() {
                       <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="date" hide />
-                  <YAxis stroke="var(--text-muted)" fontSize={10} />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="var(--text-muted)" 
+                    fontSize={10} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    minTickGap={40}
+                    tickFormatter={(val) => {
+                      const date = new Date(val);
+                      return isNaN(date.getTime()) ? val : date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                    }}
+                  />
+                  <YAxis 
+                    stroke="var(--text-muted)" 
+                    fontSize={10} 
+                    axisLine={false} 
+                    tickLine={false}
+                    tickFormatter={v => `$${v}`}
+                    domain={['auto', 'auto']}
+                  />
                   <Tooltip 
                     contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px' }}
                     itemStyle={{ color: 'var(--primary)' }}
                   />
+                  <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
                   <Area type="monotone" dataKey="pnl" stroke="var(--primary)" fill="url(#pnlGradient)" strokeWidth={3} />
                 </AreaChart>
               </ResponsiveContainer>
