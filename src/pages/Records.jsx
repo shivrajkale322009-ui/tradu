@@ -13,6 +13,7 @@ export default function Records() {
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isWide, setIsWide] = useState(() => localStorage.getItem('recordsWide') === 'true');
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' or 'asc'
 
   useEffect(() => {
     localStorage.setItem('recordsWide', isWide);
@@ -71,7 +72,13 @@ export default function Records() {
     }
   }, [isExpanded]);
 
-  const filteredTrades = trades.filter(t => 
+  const sortedTrades = [...trades].sort((a, b) => {
+     const timeA = new Date(`${a.date}T${a.time}Z`).getTime();
+     const timeB = new Date(`${b.date}T${b.time}Z`).getTime();
+     return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
+  });
+
+  const filteredTrades = sortedTrades.filter(t => 
     t.pair?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.strategy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.date?.includes(searchTerm) ||
@@ -142,6 +149,8 @@ export default function Records() {
               trades={filteredTrades} 
               onDelete={handleDelete} 
               onNavigate={navigate}
+              sortOrder={sortOrder}
+              onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
             />
           </motion.div>
         </motion.div>
@@ -189,6 +198,8 @@ export default function Records() {
                     trades={filteredTrades}
                     onDelete={handleDelete}
                     onNavigate={navigate}
+                    sortOrder={sortOrder}
+                    onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
                   />
                 </div>
               </div>
@@ -200,12 +211,17 @@ export default function Records() {
   );
 }
 
-const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
+const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrder, onToggleSort }) => (
   <table className={`sci-fi-table ${isExpanded ? 'expanded-mode' : ''} ${isWide ? 'wide-mode' : ''}`}>
     <thead style={{ position: (isExpanded || isWide) ? 'sticky' : 'static', top: 0, zIndex: 10 }}>
       <tr>
         <th style={{ width: '60px' }}>#</th>
-        <th>Date / Time</th>
+        <th 
+          onClick={() => onToggleSort()} 
+          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+        >
+          Date / Time {sortOrder === 'desc' ? <TrendingDown size={14}/> : <TrendingUp size={14}/>}
+        </th>
         <th>Asset Pair</th>
         <th>Type</th>
         <th>Strategy</th>
@@ -231,7 +247,7 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
             className="row-glow"
           >
             <td style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace' }}>
-              #{String(trade.tradeNo || trades.length - idx).padStart(3, '0')}
+              #{String(trade.tradeNo || (sortOrder === 'asc' ? idx + 1 : trades.length - idx)).padStart(3, '0')}
             </td>
             <td style={{ color: 'var(--text-muted)', fontSize: (isExpanded || isWide) ? '0.9rem' : '0.8rem', padding: (isExpanded || isWide) ? '1.5rem 1rem' : '1rem' }}>
               {(() => {

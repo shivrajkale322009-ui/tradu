@@ -110,6 +110,18 @@ export default function Analytics() {
     // Best/Worst
     const sortedByPnl = [...trades].sort((a, b) => b.pnl - a.pnl);
 
+    // Tactical Account Drawdown (Peak-to-Trough)
+    let currentEquity = 0;
+    let maxHigh = 0;
+    let maxDrawdown = 0;
+
+    trades.forEach(t => {
+      currentEquity += Number(t.pnl);
+      if (currentEquity > maxHigh) maxHigh = currentEquity;
+      const dd = maxHigh - currentEquity;
+      if (dd > maxDrawdown) maxDrawdown = dd;
+    });
+
     return {
       totalTrades: trades.length,
       winRate: winRate.toFixed(1),
@@ -122,6 +134,7 @@ export default function Analytics() {
       emotionalData,
       maxWinStreak,
       maxLossStreak,
+      maxDrawdown: maxDrawdown.toFixed(2),
       bestTrade: sortedByPnl[0],
       worstTrade: sortedByPnl[sortedByPnl.length - 1],
       winLossPie: [
@@ -292,7 +305,7 @@ export default function Analytics() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Max Drawdown</span>
-                <span className="text-danger" style={{ fontWeight: 600 }}>-${Math.abs(analyticsData.worstTrade?.pnl || 0)}</span>
+                <span className="text-danger" style={{ fontWeight: 600 }}>-${analyticsData.maxDrawdown}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span className="text-muted">Win Streak</span>
