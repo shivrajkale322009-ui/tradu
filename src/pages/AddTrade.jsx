@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveTrade, getUserProfile } from '../utils/db';
-import { ImagePlus, X, AlertCircle, ShieldCheck, Database, Cpu, Zap } from 'lucide-react';
+import { ImagePlus, X, AlertCircle, ShieldCheck, Database, Cpu, Zap, Check, ArrowRight, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,12 +49,6 @@ const SyncOverlay = ({ progress, status }) => (
       {progress >= 60 && progress < 90 && "BYPASSING LATENCY BARRIERS..."}
       {progress >= 90 && progress < 100 && "VALIDATING CHECKSUM..."}
       {progress === 100 && "DATA SYNC SUCCESSFUL. RECORDS SECURED."}
-    </div>
-
-    <div style={{ position: 'absolute', bottom: '2rem', left: '2rem', textAlign: 'left', opacity: 0.3, fontFamily: 'monospace', fontSize: '0.6rem' }}>
-      IP: 192.168.0.{Math.floor(Math.random() * 255)}<br/>
-      PORT: {Math.floor(Math.random() * 9000) + 1000}<br/>
-      PROTOCOL: AES-256-GCM
     </div>
   </motion.div>
 );
@@ -401,13 +395,56 @@ export default function AddTrade() {
           </div>
         </div>
 
-        <button type="submit" disabled={isSubmitting} className="btn-primary" style={{ width: '100%', marginTop: '1rem' }}>
-          {isSubmitting ? 'Transferring Data...' : 'Save Trade'}
-        </button>
+        <motion.button 
+          whileHover={{ scale: 1.02, boxShadow: '0 0 20px var(--primary-glow)' }}
+          whileTap={{ scale: 0.95, background: 'var(--primary-dark)' }}
+          type="submit" 
+          disabled={isSubmitting} 
+          className="btn-primary" 
+          style={{ width: '100%', marginTop: '1rem', position: 'relative', overflow: 'hidden' }}
+        >
+          <AnimatePresence mode="wait">
+            {!isSubmitting ? (
+              <motion.div 
+                key="save"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <Zap size={18} /> Save Trade
+              </motion.div>
+            ) : syncStatus === 'success' ? (
+              <motion.div 
+                key="done"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1.2 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--success)' }}
+              >
+                <Check size={20} /> Success
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="loading"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              >
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                  <Cpu size={18} />
+                </motion.div>
+                Processing...
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.button>
       </form>
 
       <AnimatePresence>
-        {isSubmitting && <SyncOverlay progress={syncProgress} status={syncStatus} />}
+        {isSubmitting && <SyncOverlay progress={syncProgress} status={syncStatus} tradeData={formData} />}
       </AnimatePresence>
     </div>
   );

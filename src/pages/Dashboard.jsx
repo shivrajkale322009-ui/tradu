@@ -392,24 +392,44 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {filteredTrades.map(trade => (
-              <tr key={trade.id} onClick={() => navigate(`/trade/${trade.id}`)} style={{ cursor: 'pointer' }}>
-                <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  {trade.date}<br/>
-                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span>
-                </td>
-                <td style={{ fontWeight: 600 }}>{trade.pair}</td>
-                <td>
-                  <span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.7rem' }}>
-                    {trade.type?.toUpperCase()}
-                  </span>
-                </td>
-                <td className={Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger'} style={{ fontWeight: 600 }}>
-                  {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}
-                </td>
-                <td><ArrowUpRight size={16} className="text-muted"/></td>
-              </tr>
-            ))}
+            <AnimatePresence mode="popLayout">
+              {filteredTrades.map((trade, idx) => (
+                <motion.tr 
+                  key={trade.id} 
+                  layout
+                  initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: idx * 0.05,
+                    ease: [0.4, 0, 0.2, 1] 
+                  }}
+                  onClick={() => navigate(`/trade/${trade.id}`)} 
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    {trade.date}<br/>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span>
+                  </td>
+                  <td style={{ fontWeight: 600 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {trade.pair}
+                      {idx === 0 && <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.7rem' }}>
+                      {trade.type?.toUpperCase()}
+                    </span>
+                  </td>
+                  <td className={Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger'} style={{ fontWeight: 600 }}>
+                    {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}
+                  </td>
+                  <td><ArrowUpRight size={16} className="text-muted"/></td>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
             {filteredTrades.length === 0 && (
               <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center', opacity: 0.5 }}>Initial sequence required. No records found.</td></tr>
             )}

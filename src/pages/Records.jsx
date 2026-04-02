@@ -86,12 +86,15 @@ export default function Records() {
               </tr>
             </thead>
             <tbody>
-              <AnimatePresence>
-                {filteredTrades.map(trade => (
+              <AnimatePresence mode="popLayout">
+                {filteredTrades.map((trade, idx) => (
                   <motion.tr 
                     key={trade.id} 
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }}
+                    layout
+                    initial={{ opacity: 0, scale: 0.98, x: -10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.3, delay: idx * 0.03 }}
                     onClick={() => navigate(`/trade/${trade.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
