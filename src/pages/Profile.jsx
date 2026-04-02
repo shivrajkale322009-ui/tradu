@@ -111,20 +111,29 @@ export default function Profile() {
       let lastSeq = 0;
 
       for (const line of lines) {
-        if (!line.trim()) continue;
-        const [date, time, pair, type, pnl, seq] = line.split(',').map(s => s.trim());
+        if (!line.trim() || line.includes('TRADE NO.')) continue;
         
-        if (date && pair && type && pnl) {
+        // Handle tab-separated or space-separated mapping
+        const parts = line.split('\t').map(s => s.trim());
+        if (parts.length < 7) continue;
+
+        const [seq, openTime, closeTime, type, lots, pair, pnl] = parts;
+        
+        if (openTime && pair && type) {
           setMigrationStatus(`FEEDING_TRADE: ${++count} / ${lines.length}`);
+          
+          // Parse opening time (Format: 2026-04-02 13:41:31)
+          const [datePart, timePart] = openTime.split(' ');
           const seqNo = parseInt(seq) || count;
           lastSeq = Math.max(lastSeq, seqNo);
 
-          // Construct trade object (minimized)
           await saveTrade({
-            date,
-            time: time || '00:00',
+            date: datePart,
+            time: timePart,
+            closingTime: closeTime,
             pair: pair.toUpperCase(),
             type: type.toLowerCase(),
+            lots: lots || '0.01',
             pnl: parseFloat(pnl) || 0,
             tradeNo: seqNo,
             strategy: '',
@@ -493,18 +502,18 @@ export default function Profile() {
         </div>
         
         <p className="subtitle" style={{ color: 'var(--text-muted)' }}>
-          PASTE_CSV: Feed your historical trade entries (234+) into the terminal database.
+          PASTE_TAB_DATA: Copy columns directly from your spreadsheet into the terminal.
           <br/>
-          <strong>FORMAT:</strong> Date, Time, Pair, Type, PnL, SeqNo
+          <strong>FORMAT:</strong> TradeNo | OpenTime | CloseTime | Type | Lots | Symbol | Profit
         </p>
 
         <textarea
           className="input"
-          placeholder="8 Dec, 18:55, XAUUSD, SELL, -2.05, 1"
+          placeholder="297	2026-04-02 13:41:31	2026-04-02 13:45:48	sell	0.01	BTCUSDm	-1.79"
           value={migrationData}
           onChange={(e) => setMigrationData(e.target.value)}
           disabled={isMigrating}
-          style={{ height: '200px', width: '100%', marginBottom: '1.5rem', fontSize: '0.8rem', fontFamily: 'monospace', padding: '1rem' }}
+          style={{ height: '200px', width: '100%', marginBottom: '1.5rem', fontSize: '0.8rem', fontFamily: 'monospace', padding: '1rem', whiteSpace: 'pre' }}
         />
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

@@ -131,6 +131,16 @@ export default function TradeDetails() {
                     Grade: <strong style={{ color: '#fff', marginLeft: '0.2rem' }}>{trade.quality.toUpperCase()}</strong>
                   </span>
                 )}
+                {trade.lots && (
+                  <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', border: '1px solid var(--border)', color: 'var(--primary)' }}>
+                    LOTS: {trade.lots}
+                  </span>
+                )}
+                {trade.closingTime && (
+                  <span className="badge" style={{ background: 'rgba(255, 51, 102, 0.05)', color: 'var(--danger)', fontSize: '0.65rem' }}>
+                    CLOSED: {trade.closingTime.split(' ').slice(1).join(' ')}
+                  </span>
+                )}
                 </>
               ) : (
                 <>
