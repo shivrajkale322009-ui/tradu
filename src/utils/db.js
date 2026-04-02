@@ -5,6 +5,10 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 const TRADES_COLLECTION = 'trades';
 const USERS_COLLECTION = 'users';
 
+/**
+ * Fetches user-specific metadata and workstation preferences.
+ * @param {string} userId - The unique Firebase authentication ID.
+ */
 export const getUserProfile = async (userId) => {
   if (!firestore || !userId) return null;
   try {
