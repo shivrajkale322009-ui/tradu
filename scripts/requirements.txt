@@ -1,0 +1,4 @@
+ccxt
+pandas
+mplfinance
+matplotlib
