@@ -222,8 +222,17 @@ export default function Dashboard() {
         <div className="glass-panel metric-card">
           <div className="metric-label"><Wallet size={14}/> Total Balance</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div className="metric-value"><AnimatedCounter value={10000 + stats.totalPnl} prefix="$" decimals={2}/></div>
-            <Sparkline data={stats.pnlPoints} />
+            <div>
+              <div className="metric-value">
+                <AnimatedCounter value={(userProfile?.capital || 0) + stats.totalPnl} prefix="$" decimals={2}/>
+              </div>
+              {userProfile?.capital > 0 && (
+                <div style={{ fontSize: '0.7rem', color: stats.totalPnl >= 0 ? 'var(--secondary)' : 'var(--danger)', marginTop: '0.2rem', fontWeight: 600 }}>
+                  {stats.totalPnl >= 0 ? '+' : ''}{((stats.totalPnl / userProfile.capital) * 100).toFixed(2)}% Growth
+                </div>
+              )}
+            </div>
+            <Sparkline data={stats.pnlPoints} color={stats.totalPnl >= 0 ? 'var(--secondary)' : 'var(--danger)'} />
           </div>
         </div>
         <div className="glass-panel metric-card">

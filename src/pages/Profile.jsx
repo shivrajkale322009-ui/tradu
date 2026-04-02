@@ -9,9 +9,9 @@ export default function Profile() {
   const { currentUser, logout } = useAuth();
   const { theme, changeTheme } = useTheme();
   const navigate = useNavigate();
-  const [favouritePairs, setFavouritePairs] = useState(['BTC/USDT', 'ETH/USDT', 'SOL/USDT']);
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
   const [fontSize, setFontSize] = useState(16);
+  const [capital, setCapital] = useState(0);
   const [newPair, setNewPair] = useState('');
   const [newStrategy, setNewStrategy] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -41,6 +41,7 @@ export default function Profile() {
       if (profile.favouritePairs) setFavouritePairs(profile.favouritePairs);
       if (profile.strategies) setStrategies(profile.strategies);
       if (profile.fontSize) setFontSize(profile.fontSize);
+      if (profile.capital) setCapital(profile.capital);
       setDisplayName(profile.displayName || currentUser.displayName || '');
       setPhotoURL(profile.photoURL || currentUser.photoURL || '');
     } else {
@@ -314,6 +315,31 @@ export default function Profile() {
             <span>Default (16px)</span>
             <span>Large</span>
           </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2.5rem', borderLeft: '3px solid var(--secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <Database size={18} className="text-secondary" />
+            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Starting Capital</span>
+          </div>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>$</span>
+            <input 
+              type="number" 
+              className="input" 
+              placeholder="e.g. 10000" 
+              value={capital}
+              onChange={async (e) => {
+                const val = parseFloat(e.target.value) || 0;
+                setCapital(val);
+                await updateUserProfile(currentUser.uid, { capital: val });
+              }}
+              style={{ paddingLeft: '2rem', fontSize: '1.1rem', fontWeight: 700, color: 'var(--secondary)' }}
+            />
+          </div>
+          <p style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            This capital will be used to calculate your overall ROI and account growth performance.
+          </p>
         </div>
       </div>
 
