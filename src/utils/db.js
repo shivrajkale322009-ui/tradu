@@ -4,6 +4,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 
 const TRADES_COLLECTION = 'trades';
 const USERS_COLLECTION = 'users';
+const JOURNALS_COLLECTION = 'journals';
 
 /**
  * Fetches user-specific metadata and workstation preferences.
@@ -15,12 +16,22 @@ export const getUserProfile = async (userId) => {
     const docRef = doc(firestore, USERS_COLLECTION, userId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      return docSnap.data();
+      const data = docSnap.data();
+      return { 
+        ...data, 
+        activeJournalId: data.activeJournalId || userId // fallback to private journal
+      };
     }
-    return { favouritePairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'] }; // default profile
+    return { 
+      favouritePairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
+      activeJournalId: userId
+    }; 
   } catch (err) {
     console.error('Error getting user profile', err);
-    return { favouritePairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'] };
+    return { 
+      favouritePairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
+      activeJournalId: userId
+    };
   }
 };
 
@@ -34,33 +45,59 @@ export const updateUserProfile = async (userId, data) => {
   }
 };
 
-export const saveTrade = async (trade, userId) => {
-  if (!firestore) {
-    alert("Firebase is not configured! Please see .env.local.example");
-    return null;
-  }
-  if (!userId) throw new Error("User must be logged in to save trade!");
+// --- Shared Cockpit Operations ---
+
+export const createSharedJournal = async (userId) => {
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const journalData = {
+    ownerId: userId,
+    code,
+    members: [userId],
+    createdAt: new Date().toISOString()
+  };
+  const docRef = await addDoc(collection(firestore, JOURNALS_COLLECTION), journalData);
+  await updateUserProfile(userId, { activeJournalId: docRef.id, hostedJournalId: docRef.id, journalCode: code });
+  return { id: docRef.id, code };
+};
+
+export const joinSharedJournal = async (userId, code) => {
+  const q = query(collection(firestore, JOURNALS_COLLECTION), where('code', '==', code.toUpperCase()));
+  const querySnapshot = await getDocs(q);
+  if (querySnapshot.empty) throw new Error("INVALID_SESSION_CODE");
+  
+  const journalDoc = querySnapshot.docs[0];
+  const journalId = journalDoc.id;
+  
+  await updateUserProfile(userId, { activeJournalId: journalId });
+  return journalId;
+};
+
+export const leaveSharedJournal = async (userId) => {
+  await updateUserProfile(userId, { activeJournalId: userId });
+};
+
+
+export const saveTrade = async (trade, userId, journalId) => {
+  if (!firestore) return null;
+  const targetJournalId = journalId || userId;
   try {
     const { image, ...tradeDataWithoutImage } = trade;
     
     // Determine the next trade sequence number
-    const userProfile = await getUserProfile(userId);
-    const nextTradeNo = (userProfile?.tradeCounter || 0) + 1;
+    const nextTradeNo = (trade.tradeNo) ? trade.tradeNo : (await getTrades(targetJournalId)).length + 1;
     
     const newTrade = {
       ...tradeDataWithoutImage,
       imageUrl: image || null,
-      userId,
+      userId, // who recorded it
+      journalId: targetJournalId, // where it belongs
       tradeNo: nextTradeNo,
       createdAt: new Date().toISOString(),
       timestamp: Date.now()
     };
 
     const docRef = await addDoc(collection(firestore, TRADES_COLLECTION), newTrade);
-    
-    // Update the counter in the user profile
-    await updateUserProfile(userId, { tradeCounter: nextTradeNo });
-    
+    // Note: In shared journals, we rely on local count or global journal count logic.
     return { ...newTrade, id: docRef.id };
   } catch (err) {
     if (err.message && err.message.includes('Missing or insufficient permissions')) {
@@ -71,13 +108,12 @@ export const saveTrade = async (trade, userId) => {
   }
 };
 
-export const getTrades = async (userId) => {
-  if (!firestore) return [];
-  if (!userId) return [];
+export const getTrades = async (journalId) => {
+  if (!firestore || !journalId) return [];
   try {
     const q = query(
       collection(firestore, TRADES_COLLECTION),
-      where('userId', '==', userId)
+      where('journalId', '==', journalId)
     );
     const querySnapshot = await getDocs(q);
     

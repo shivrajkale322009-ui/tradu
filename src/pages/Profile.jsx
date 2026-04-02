@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getUserProfile, updateUserProfile, saveTrade } from '../utils/db';
-import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database } from 'lucide-react';
+import { getUserProfile, updateUserProfile, saveTrade, createSharedJournal, joinSharedJournal, leaveSharedJournal } from '../utils/db';
+import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database, Users, Share2, Link as LinkIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
@@ -23,6 +23,9 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [activeJournalId, setActiveJournalId] = useState('');
+  const [hostedJournalCode, setHostedJournalCode] = useState('');
 
   useEffect(() => {
     if (fontSize) {
@@ -46,9 +49,12 @@ export default function Profile() {
       if (profile.strategies) setStrategies(profile.strategies);
       if (profile.fontSize) setFontSize(profile.fontSize);
       if (profile.capital) setCapital(profile.capital);
+      setActiveJournalId(profile.activeJournalId || currentUser.uid);
+      setHostedJournalCode(profile.journalCode || '');
       setDisplayName(profile.displayName || currentUser.displayName || '');
       setPhotoURL(profile.photoURL || currentUser.photoURL || '');
     } else {
+      setActiveJournalId(currentUser.uid);
       setDisplayName(currentUser.displayName || '');
       setPhotoURL(currentUser.photoURL || '');
     }
@@ -97,6 +103,46 @@ export default function Profile() {
     await updateUserProfile(currentUser.uid, { displayName: displayName.trim() });
     setIsEditingName(false);
     setIsSaving(false);
+  };
+
+  const handleCreateSync = async () => {
+    try {
+      const { code } = await createSharedJournal(currentUser.uid);
+      setHostedJournalCode(code);
+      setActiveJournalId(currentUser.uid); // Host is already in their own journal
+      alert(`SYNC_CODE_GENERATED: Share this with your co-analyst: ${code}`);
+      loadProfile();
+    } catch (err) {
+      console.error(err);
+      alert("COULD_NOT_GENERATE_CODE");
+    }
+  };
+
+  const handleJoinSync = async () => {
+    if (!joinCode.trim()) return;
+    try {
+      setLoading(true);
+      await joinSharedJournal(currentUser.uid, joinCode.trim());
+      setJoinCode('');
+      alert("SESSION_JOINED: Terminal synchronized with co-analyst.");
+      loadProfile();
+    } catch (err) {
+      console.error(err);
+      alert("INVALID_OR_EXPIRED_CODE");
+      setLoading(false);
+    }
+  };
+
+  const handleLeaveSync = async () => {
+    try {
+      setLoading(true);
+      await leaveSharedJournal(currentUser.uid);
+      alert("SESSION_TERMINATED: Returned to private database.");
+      loadProfile();
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
   };
 
   const handleMigration = async () => {
@@ -218,6 +264,76 @@ export default function Profile() {
         </button>
         <h1 style={{ margin: 0, flex: 1 }}>My Profile</h1>
       </header>
+
+      {/* Shared Cockpit HUD */}
+      <div className="glass-panel" style={{ 
+        padding: '2rem', 
+        marginBottom: '2rem', 
+        borderLeft: activeJournalId !== currentUser.uid ? '4px solid var(--secondary)' : '1px solid var(--border)',
+        background: activeJournalId !== currentUser.uid ? 'rgba(0, 240, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Users size={20} className={activeJournalId !== currentUser.uid ? "text-secondary" : "text-muted"} />
+            <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Shared Cockpit</h2>
+          </div>
+          {activeJournalId !== currentUser.uid && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--secondary)', fontSize: '0.7rem', fontWeight: 800, background: 'rgba(0, 240, 255, 0.1)', padding: '0.25rem 0.75rem', borderRadius: '1rem' }}>
+              <Activity size={12} /> LIVE_SYNC_ACTIVE
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          {/* Host Mode */}
+          <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+            <h3 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Host Station</h3>
+            {hostedJournalCode ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>YOUR_SYNC_CODE:</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.2em', fontFamily: 'monospace', padding: '0.5rem', background: 'rgba(0, 240, 255, 0.05)', textAlign: 'center', borderRadius: '0.5rem' }}>
+                  {hostedJournalCode}
+                </div>
+                <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>Give this code to your partner to start dual-analysis.</p>
+              </div>
+            ) : (
+              <button onClick={handleCreateSync} className="btn-outline" style={{ width: '100%', borderColor: 'var(--primary)', color: 'var(--primary)' }}>
+                <Share2 size={16} /> GENERATE_SYNC_CODE
+              </button>
+            )}
+          </div>
+
+          {/* Join Mode */}
+          <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.75rem', border: '1px solid var(--border)' }}>
+             <h3 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Join Station</h3>
+             {activeJournalId !== currentUser.uid ? (
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                 <div style={{ padding: '1rem', textAlign: 'center', background: 'rgba(0, 240, 255, 0.05)', borderRadius: '0.5rem', border: '1px solid var(--secondary)' }}>
+                    <div style={{ color: 'var(--secondary)', fontWeight: 800, fontSize: '0.9rem' }}>CONNECTED</div>
+                    <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>TUNED_TO_REMOTE_DATA_STREAM</div>
+                 </div>
+                 <button onClick={handleLeaveSync} className="btn-outline" style={{ width: '100%', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+                   <LogOut size={16} /> DISCONNECT_SESSION
+                 </button>
+               </div>
+             ) : (
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                 <input 
+                   type="text" 
+                   placeholder="ENTER_6_DIGIT_CODE" 
+                   value={joinCode}
+                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                   className="input"
+                   style={{ textAlign: 'center', letterSpacing: '0.2em' }}
+                 />
+                 <button onClick={handleJoinSync} disabled={!joinCode} className="btn-primary" style={{ width: '100%', background: 'var(--secondary)', borderColor: 'var(--secondary)' }}>
+                   <LinkIcon size={16} /> JOIN_CO-PILOT
+                 </button>
+               </div>
+             )}
+          </div>
+        </div>
+      </div>
 
       <div className="profile-section glass-panel" style={{ 
         display: 'flex', 

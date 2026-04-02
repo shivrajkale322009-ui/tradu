@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getTrades } from '../utils/db';
+import { getTrades, getUserProfile } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, 
@@ -40,10 +40,14 @@ export default function Analytics() {
 
   useEffect(() => {
     if (currentUser) {
-      getTrades(currentUser.uid).then(data => {
+      const fetchData = async () => {
+        setLoading(true);
+        const profile = await getUserProfile(currentUser.uid);
+        const data = await getTrades(profile?.activeJournalId || currentUser.uid);
         setTrades(data.sort((a, b) => new Date(a.date) - new Date(b.date)));
         setLoading(false);
-      });
+      };
+      fetchData();
     }
   }, [currentUser]);
 

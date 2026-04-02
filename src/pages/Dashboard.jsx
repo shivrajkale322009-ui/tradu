@@ -105,7 +105,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (currentUser) {
-      loadTrades(currentUser.uid);
       loadProfile(currentUser.uid);
     } else {
       setTrades([]);
@@ -117,12 +116,17 @@ export default function Dashboard() {
   const loadProfile = async (userId) => {
     const profile = await getUserProfile(userId);
     setUserProfile(profile);
+    if (profile?.activeJournalId) {
+      loadTrades(profile.activeJournalId);
+    } else {
+      loadTrades(userId);
+    }
   };
 
-  const loadTrades = async (userId) => {
+  const loadTrades = async (id) => {
     setLoading(true);
-    const data = await getTrades(userId);
-    setTrades(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
+    const data = await getTrades(id);
+    setTrades(data);
     setLoading(false);
   };
 

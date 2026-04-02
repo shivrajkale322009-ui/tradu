@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTrades, deleteTrade } from '../utils/db';
+import { getTrades, deleteTrade, getUserProfile } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, Calendar, TrendingUp, TrendingDown, Clock, Search, Maximize2, Minimize2, Download, X, Filter } from 'lucide-react';
@@ -28,7 +28,8 @@ export default function Records() {
 
   const loadTrades = async () => {
     setLoading(true);
-    const data = await getTrades(currentUser.uid);
+    const profile = await getUserProfile(currentUser.uid);
+    const data = await getTrades(profile?.activeJournalId || currentUser.uid);
     setTrades(data);
     setLoading(false);
   };

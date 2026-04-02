@@ -356,11 +356,12 @@ export default function AddTrade() {
     }, 150);
 
     try {
+      const profile = await getUserProfile(currentUser.uid);
       await saveTrade({
         ...formData,
         pnl: Number(formData.pnl),
         image: imagePreview
-      }, currentUser.uid);
+      }, currentUser.uid, profile?.activeJournalId || currentUser.uid);
 
       clearInterval(interval);
       setSyncProgress(100);
