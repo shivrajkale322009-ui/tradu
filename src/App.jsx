@@ -6,6 +6,7 @@ import AddTrade from './pages/AddTrade';
 import TradeDetails from './pages/TradeDetails';
 import Profile from './pages/Profile';
 import Records from './pages/Records';
+import Analytics from './pages/Analytics';
 import Navigation from './components/Navigation';
 import MatrixBackground from './components/MatrixBackground';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -42,6 +43,7 @@ function App() {
                   <Route path="/trade/:id" element={<TradeDetails />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/records" element={<Records />} />
+                  <Route path="/analytics" element={<Analytics />} />
                 </Routes>
               </main>
               <Navigation />
