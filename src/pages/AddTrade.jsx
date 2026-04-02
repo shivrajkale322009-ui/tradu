@@ -491,8 +491,8 @@ export default function AddTrade() {
 
         <div className="form-group grid-full">
           <label>Grade / Quality</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.4rem' }}>
-            {['a1', 'a2', 'b1', 'b2', 'c1', 'c2', 'd'].map(q => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+            {['a1', 'b', 'c', 'd'].map(q => (
               <button
                 key={q}
                 type="button"

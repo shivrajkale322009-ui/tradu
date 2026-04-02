@@ -176,7 +176,7 @@ export default function TradeDetails() {
                       onChange={(e) => setTrade({...trade, quality: e.target.value})}
                       style={{ padding: '0.4rem', marginTop: '0.2rem' }}
                     >
-                      {['a1', 'a2', 'b1', 'b2', 'c1', 'c2', 'd'].map(q => (
+                      {['a1', 'b', 'c', 'd'].map(q => (
                         <option key={q} value={q}>{q.toUpperCase()}</option>
                       ))}
                     </select>
