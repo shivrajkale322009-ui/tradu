@@ -750,13 +750,30 @@ select option {
   box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.05);
 }
 
-.row-glow:hover td {
-  color: #fff !important;
+/* Wide Mode Enhancements */
+.wide-mode {
+  width: 100% !important;
 }
 
-/* Expanded Terminal Mode */
-.expanded-mode {
-  background: transparent;
+.wide-mode th {
+  padding: 1.5rem 1.25rem !important;
+  font-size: 0.85rem !important;
+  background: rgba(0, 243, 255, 0.08) !important;
+}
+
+.wide-mode td {
+  padding: 1.25rem !important;
+}
+
+.wide-mode .row-glow:hover {
+  background: rgba(0, 243, 255, 0.06) !important;
+  box-shadow: inset 0 0 25px rgba(0, 243, 255, 0.1);
+}
+
+.glow-text-success {
+  color: var(--success);
+  text-shadow: 0 0 8px var(--success-glow);
+  font-weight: 600;
 }
 
 .expanded-mode th {

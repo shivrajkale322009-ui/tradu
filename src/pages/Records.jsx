@@ -12,6 +12,11 @@ export default function Records() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isWide, setIsWide] = useState(() => localStorage.getItem('recordsWide') === 'true');
+
+  useEffect(() => {
+    localStorage.setItem('recordsWide', isWide);
+  }, [isWide]);
 
   useEffect(() => {
     if (currentUser) {
@@ -75,7 +80,7 @@ export default function Records() {
   if (loading) return <div className="page-container loading">Accessing Records...</div>;
 
   return (
-    <div className="page-container">
+    <div className="page-container" style={{ maxWidth: isWide ? '95vw' : '800px', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
       <header className="header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <Link to="/" className="icon-btn">
           <ArrowLeft size={24} />
@@ -111,22 +116,33 @@ export default function Records() {
                 <Download size={18} />
               </button>
               <button 
+                className={`icon-btn ${isWide ? 'text-primary' : 'text-muted'}`} 
+                title={isWide ? "Narrow View" : "Expand Width"}
+                onClick={() => setIsWide(!isWide)}
+              >
+                <Maximize2 size={18} style={{ transform: isWide ? 'rotate(90deg)' : 'none' }} />
+              </button>
+              <button 
                 className="icon-btn text-muted" 
-                title="Expand View"
+                title="Focus Mode"
                 onClick={() => setIsExpanded(true)}
               >
-                <Maximize2 size={18} />
+                <Filter size={18} />
               </button>
             </div>
           </div>
           
-          <div style={{ overflowX: 'auto', padding: '1.25rem' }}>
+          <motion.div 
+            animate={{ padding: isWide ? '1.5rem 2.5rem' : '1.25rem' }}
+            style={{ overflowX: 'auto' }}
+          >
             <TradeTable 
+              isWide={isWide}
               trades={filteredTrades} 
               onDelete={handleDelete} 
               onNavigate={navigate}
             />
-          </div>
+          </motion.div>
         </motion.div>
 
         <AnimatePresence>
@@ -183,9 +199,9 @@ export default function Records() {
   );
 }
 
-const TradeTable = ({ trades, onDelete, onNavigate, isExpanded }) => (
-  <table className={`sci-fi-table ${isExpanded ? 'expanded-mode' : ''}`}>
-    <thead style={{ position: isExpanded ? 'sticky' : 'static', top: 0, zIndex: 10 }}>
+const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
+  <table className={`sci-fi-table ${isExpanded ? 'expanded-mode' : ''} ${isWide ? 'wide-mode' : ''}`}>
+    <thead style={{ position: (isExpanded || isWide) ? 'sticky' : 'static', top: 0, zIndex: 10 }}>
       <tr>
         <th>Date / Time</th>
         <th>Asset Pair</th>
@@ -204,20 +220,20 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded }) => (
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3, delay: idx * 0.02 }}
+            transition={{ duration: 0.3, delay: idx * 0.015 }}
             onClick={() => onNavigate(`/trade/${trade.id}`)}
             style={{ 
               cursor: 'pointer',
-              borderLeft: idx === 0 && isExpanded ? '3px solid var(--primary)' : 'none'
+              borderLeft: idx === 0 && (isExpanded || isWide) ? '3px solid var(--primary)' : 'none'
             }}
             className="row-glow"
           >
-            <td style={{ color: 'var(--text-muted)', fontSize: isExpanded ? '0.9rem' : '0.8rem', padding: isExpanded ? '1.5rem 1rem' : '1rem' }}>
+            <td style={{ color: 'var(--text-muted)', fontSize: (isExpanded || isWide) ? '0.9rem' : '0.8rem', padding: (isExpanded || isWide) ? '1.5rem 1rem' : '1rem' }}>
               <div style={{ fontWeight: 600, color: '#fff' }}>{trade.date}</div>
               <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{trade.time}</div>
             </td>
             <td>
-              <div style={{ fontSize: isExpanded ? '1.1rem' : '1rem', fontWeight: 700, color: 'var(--primary)' }}>{trade.pair}</div>
+              <div style={{ fontSize: (isExpanded || isWide) ? '1.1rem' : '1rem', fontWeight: 700, color: 'var(--primary)' }}>{trade.pair}</div>
             </td>
             <td>
               <span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }}>
@@ -226,7 +242,7 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded }) => (
             </td>
             <td style={{ fontSize: '0.85rem' }}>{trade.strategy || 'NO_STRATEGY'}</td>
             <td style={{ textAlign: 'right' }}>
-              <div className={`${Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger'}`} style={{ fontSize: isExpanded ? '1.2rem' : '1rem', fontWeight: 700 }}>
+              <div className={`${Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger'}`} style={{ fontSize: (isExpanded || isWide) ? '1.2rem' : '1rem', fontWeight: 700 }}>
                 {Number(trade.pnl) >= 0 ? '▲' : '▼'} {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}
               </div>
             </td>
@@ -242,6 +258,9 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded }) => (
           </motion.tr>
         ))}
       </AnimatePresence>
+      {trades.length === 0 && (
+        <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>ARCHIVE_EMPTY // NO_RECORDS_FOUND</td></tr>
+      )}
     </tbody>
   </table>
 );
