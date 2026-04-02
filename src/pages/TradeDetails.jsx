@@ -69,7 +69,7 @@ export default function TradeDetails() {
               </span>
               <span className="badge bg-muted">
                 <Calendar size={14} />
-                {trade.date}
+                {trade.date} {trade.time && `• ${trade.time}`}
               </span>
               {trade.emotion && trade.emotion !== 'neutral' && (
                 <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'var(--border)' }}>

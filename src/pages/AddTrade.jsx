@@ -67,6 +67,7 @@ export default function AddTrade() {
     type: 'long',
     pnl: '',
     date: new Date().toISOString().slice(0, 10),
+    time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
     strategy: '',
     emotion: 'neutral',
     notes: ''
@@ -283,6 +284,17 @@ export default function AddTrade() {
               type="date"
               name="date"
               value={formData.date}
+              onChange={handleChange}
+              className="input"
+              required
+            />
+          </div>
+          <div className="flex-1">
+            <label>Time</label>
+            <input
+              type="time"
+              name="time"
+              value={formData.time}
               onChange={handleChange}
               className="input"
               required

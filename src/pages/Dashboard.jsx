@@ -358,7 +358,10 @@ export default function Dashboard() {
           <tbody>
             {filteredTrades.map(trade => (
               <tr key={trade.id} onClick={() => navigate(`/trade/${trade.id}`)} style={{ cursor: 'pointer' }}>
-                <td style={{ color: 'var(--text-muted)' }}>{trade.date}</td>
+                <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  {trade.date}<br/>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span>
+                </td>
                 <td style={{ fontWeight: 600 }}>{trade.pair}</td>
                 <td>
                   <span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.7rem' }}>

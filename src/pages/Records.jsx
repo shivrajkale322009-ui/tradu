@@ -38,7 +38,8 @@ export default function Records() {
   const filteredTrades = trades.filter(t => 
     t.pair?.toLowerCase().includes(searchTerm.toLowerCase()) || 
     t.strategy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.date?.includes(searchTerm)
+    t.date?.includes(searchTerm) ||
+    t.time?.includes(searchTerm)
   );
 
   if (loading) return <div className="page-container loading">Accessing Records...</div>;
@@ -94,7 +95,10 @@ export default function Records() {
                     onClick={() => navigate(`/trade/${trade.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
-                    <td style={{ color: 'var(--text-muted)' }}>{trade.date}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                      {trade.date}<br/>
+                      <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span>
+                    </td>
                     <td style={{ fontWeight: 600 }}>{trade.pair}</td>
                     <td><span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.65rem' }}>{trade.type?.toUpperCase()}</span></td>
                     <td style={{ fontSize: '0.8rem' }}>{trade.strategy || '-'}</td>
