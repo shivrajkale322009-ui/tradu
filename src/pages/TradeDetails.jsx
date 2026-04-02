@@ -96,7 +96,7 @@ export default function TradeDetails() {
               </div>
             )}
             
-            <div className="badges-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div className="badges-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginTop: '0.75rem' }}>
               {isLocked ? (
                 <>
                 <span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`}>
@@ -107,25 +107,52 @@ export default function TradeDetails() {
                   <Calendar size={14} />
                   {trade.date} {trade.time && `• ${trade.time}`}
                 </span>
+                {trade.strategy && (
+                  <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', color: 'var(--primary)' }}>
+                    <Target size={14} />
+                    {trade.strategy.toUpperCase()}
+                  </span>
+                )}
                 </>
               ) : (
                 <>
-                <select 
-                  className="input" 
-                  value={trade.type || 'long'} 
-                  onChange={(e) => setTrade({...trade, type: e.target.value})}
-                  style={{ width: '120px', padding: '0.4rem' }}
-                >
-                  <option value="long">LONG</option>
-                  <option value="short">SHORT</option>
-                </select>
-                <input 
-                  type="date" 
-                  className="input" 
-                  value={trade.date} 
-                  onChange={(e) => setTrade({...trade, date: e.target.value})}
-                  style={{ width: '160px', padding: '0.4rem' }}
-                />
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', width: '100%' }}>
+                  <div style={{ flex: 1, minWidth: '140px' }}>
+                    <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Type</label>
+                    <select 
+                      className="input" 
+                      value={trade.type || 'long'} 
+                      onChange={(e) => setTrade({...trade, type: e.target.value})}
+                      style={{ padding: '0.4rem', marginTop: '0.2rem' }}
+                    >
+                      <option value="long">LONG</option>
+                      <option value="short">SHORT</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1, minWidth: '140px' }}>
+                    <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Date</label>
+                    <input 
+                      type="date" 
+                      className="input" 
+                      value={trade.date} 
+                      onChange={(e) => setTrade({...trade, date: e.target.value})}
+                      style={{ padding: '0.4rem', marginTop: '0.2rem' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1, minWidth: '140px' }}>
+                    <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Strategy</label>
+                    <select 
+                      className="input" 
+                      value={trade.strategy || 'Breakout'} 
+                      onChange={(e) => setTrade({...trade, strategy: e.target.value})}
+                      style={{ padding: '0.4rem', marginTop: '0.2rem' }}
+                    >
+                      {['Breakout', 'Scalping', 'Trend Following', 'Range', 'Mean Reversion'].map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 </>
               )}
             </div>
