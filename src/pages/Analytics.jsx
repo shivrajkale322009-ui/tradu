@@ -56,10 +56,17 @@ export default function Analytics() {
   const analyticsData = useMemo(() => {
     if (trades.length === 0) return null;
 
-    const wins = trades.filter(t => Number(t.pnl) > 0);
-    const losses = trades.filter(t => Number(t.pnl) < 0);
+    // Tactical Categorization (v4.6)
+    // C2C = Cost-to-Cost (Math.abs(pnl) < 0.5)
+    const c2cArr = trades.filter(t => Math.abs(Number(t.pnl)) < 0.5);
+    const wins = trades.filter(t => Number(t.pnl) >= 0.5);
+    const losses = trades.filter(t => Number(t.pnl) <= -0.5);
+    
     const totalPnl = trades.reduce((acc, t) => acc + Number(t.pnl), 0);
-    const winRate = (wins.length / trades.length) * 100;
+    // Dynamic Win Rate (Exclude C2C from base if you want, or include in total)
+    // User requested "new category", common standard is wins / (total - c2c) or just wins/total.
+    // We'll use (wins / totalMatches) but reflect the C2C in the profile.
+    const winRate = (wins.length / (trades.length || 1)) * 100;
     
     // Profit Curve
     let rollingPnl = 0;
@@ -129,6 +136,7 @@ export default function Analytics() {
       avgPnl: (totalPnl / trades.length).toFixed(2),
       wins: wins.length,
       losses: losses.length,
+      c2c: c2cArr.length,
       profitCurve,
       strategyPerformance,
       emotionalData,
@@ -139,7 +147,8 @@ export default function Analytics() {
       worstTrade: sortedByPnl[sortedByPnl.length - 1],
       winLossPie: [
         { name: 'Wins', value: wins.length },
-        { name: 'Losses', value: losses.length }
+        { name: 'Losses', value: losses.length },
+        { name: 'C2C', value: c2cArr.length }
       ]
     };
   }, [trades]);
@@ -259,6 +268,7 @@ export default function Analytics() {
                     >
                       <Cell fill="var(--success)" />
                       <Cell fill="var(--danger)" />
+                      <Cell fill="var(--secondary)" />
                     </Pie>
                     <Tooltip contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)' }} />
                     <Legend verticalAlign="bottom" height={36}/>
@@ -266,7 +276,7 @@ export default function Analytics() {
                 </ResponsiveContainer>
               </div>
               <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                Ratio: {analyticsData.wins} Wins vs {analyticsData.losses} Losses
+                {analyticsData.wins} W | {analyticsData.losses} L | {analyticsData.c2c} C2C
               </div>
             </div>
           </div>

@@ -397,8 +397,9 @@ const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => 
               </div>
             </td>
             <td><span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.7rem' }}>{trade.type?.toUpperCase()}</span></td>
-            <td className={Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger'} style={{ fontWeight: 600, fontSize: isExpanded ? '1.2rem' : '1rem' }}>
+            <td className={Math.abs(Number(trade.pnl)) < 0.5 ? 'text-muted' : (Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger')} style={{ fontWeight: 600, fontSize: isExpanded ? '1.2rem' : '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}
+              {Math.abs(Number(trade.pnl)) < 0.5 && <span className="badge bg-secondary" style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem' }}>C2C</span>}
             </td>
             <td><ArrowUpRight size={16} className="text-muted"/></td>
           </motion.tr>

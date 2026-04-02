@@ -286,8 +286,9 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
             </td>
             <td style={{ fontSize: '0.85rem' }}>{trade.strategy || 'NO_STRATEGY'}</td>
             <td style={{ textAlign: 'right' }}>
-              <div className={`${Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger'}`} style={{ fontSize: (isExpanded || isWide) ? '1.2rem' : '1rem', fontWeight: 700 }}>
-                {Number(trade.pnl) >= 0 ? '▲' : '▼'} {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}
+              <div className={Math.abs(Number(trade.pnl)) < 0.5 ? 'text-muted' : (Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger')} style={{ fontSize: (isExpanded || isWide) ? '1.2rem' : '1rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                <div>{Number(trade.pnl) >= 0 ? '▲' : '▼'} {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}</div>
+                {Math.abs(Number(trade.pnl)) < 0.5 && <span className="badge bg-secondary" style={{ fontSize: '0.6rem', padding: '0.1rem 0.4rem', marginTop: '0.2rem' }}>C2C_SESSION</span>}
               </div>
             </td>
             <td style={{ textAlign: 'center' }}>
