@@ -65,7 +65,12 @@ export default function TradeDetails() {
             <ArrowLeft size={20} />
             <span className="tooltip">Back</span>
           </Link>
-          <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Trade Details</h1>
+          <div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--primary)', letterSpacing: '0.15em', fontWeight: 700, marginBottom: '0.2rem' }}>
+              TRADE_SESSION: #{(trade.tradeNo || 1).toString().padStart(3, '0')}
+            </div>
+            <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Trade Details</h1>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button 

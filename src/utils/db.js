@@ -43,15 +43,24 @@ export const saveTrade = async (trade, userId) => {
   try {
     const { image, ...tradeDataWithoutImage } = trade;
     
+    // Determine the next trade sequence number
+    const userProfile = await getUserProfile(userId);
+    const nextTradeNo = (userProfile?.tradeCounter || 0) + 1;
+    
     const newTrade = {
       ...tradeDataWithoutImage,
-      imageUrl: image || null, // Store base64 string directly
+      imageUrl: image || null,
       userId,
+      tradeNo: nextTradeNo,
       createdAt: new Date().toISOString(),
       timestamp: Date.now()
     };
 
     const docRef = await addDoc(collection(firestore, TRADES_COLLECTION), newTrade);
+    
+    // Update the counter in the user profile
+    await updateUserProfile(userId, { tradeCounter: nextTradeNo });
+    
     return { ...newTrade, id: docRef.id };
   } catch (err) {
     if (err.message && err.message.includes('Missing or insufficient permissions')) {

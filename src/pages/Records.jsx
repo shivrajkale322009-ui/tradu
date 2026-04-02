@@ -203,6 +203,7 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
   <table className={`sci-fi-table ${isExpanded ? 'expanded-mode' : ''} ${isWide ? 'wide-mode' : ''}`}>
     <thead style={{ position: (isExpanded || isWide) ? 'sticky' : 'static', top: 0, zIndex: 10 }}>
       <tr>
+        <th style={{ width: '60px' }}>#</th>
         <th>Date / Time</th>
         <th>Asset Pair</th>
         <th>Type</th>
@@ -228,6 +229,9 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
             }}
             className="row-glow"
           >
+            <td style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace' }}>
+              #{String(trade.tradeNo || trades.length - idx).padStart(3, '0')}
+            </td>
             <td style={{ color: 'var(--text-muted)', fontSize: (isExpanded || isWide) ? '0.9rem' : '0.8rem', padding: (isExpanded || isWide) ? '1.5rem 1rem' : '1rem' }}>
               <div style={{ fontWeight: 600, color: '#fff' }}>{trade.date}</div>
               <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{trade.time}</div>
@@ -258,7 +262,7 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide }) => (
         ))}
       </AnimatePresence>
       {trades.length === 0 && (
-        <tr><td colSpan="6" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>ARCHIVE_EMPTY // NO_RECORDS_FOUND</td></tr>
+        <tr><td colSpan="7" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>ARCHIVE_EMPTY // NO_RECORDS_FOUND</td></tr>
       )}
     </tbody>
   </table>

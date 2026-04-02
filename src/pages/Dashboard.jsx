@@ -344,6 +344,7 @@ const JournalTable = ({ trades, navigate, isExpanded }) => (
   <table className={`sci-fi-table ${isExpanded ? 'expanded-mode' : ''}`} style={{ width: '100%', textAlign: 'left' }}>
     <thead style={{ position: isExpanded ? 'sticky' : 'static', top: 0, zIndex: 10 }}>
       <tr>
+        <th style={{ width: '50px' }}>#</th>
         <th>Date</th>
         <th>Pair</th>
         <th>Type</th>
@@ -358,6 +359,9 @@ const JournalTable = ({ trades, navigate, isExpanded }) => (
             transition={{ duration: 0.4, delay: idx * 0.03 }} onClick={() => navigate(`/trade/${trade.id}`)} 
             style={{ cursor: 'pointer' }} className="row-glow"
           >
+            <td style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+              #{String(trade.tradeNo || trades.length - idx).padStart(3, '0')}
+            </td>
             <td style={{ color: 'var(--text-muted)', fontSize: isExpanded ? '0.9rem' : '0.8rem', padding: isExpanded ? '1.5rem 1rem' : '1rem' }}>
               {trade.date}<br/><span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{trade.time}</span>
             </td>
