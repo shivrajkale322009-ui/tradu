@@ -291,13 +291,6 @@ export default function Dashboard() {
           <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <CircularProgress value={stats.winRate} size={140} strokeWidth={12} color="var(--primary)" />
           </div>
-          <div className="glass-panel" style={{ padding: '1.25rem' }}>
-            <div className="metric-label" style={{ marginBottom: '1rem' }}><Shield size={14}/> Risk Management</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span className="text-muted">Avg Risk/Reward</span><span style={{ fontWeight: 600 }}>1 : 2.5</span></div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}><span className="text-muted">Profit Factor</span><span style={{ fontWeight: 600, color: 'var(--success)' }}>{(stats.totalPnl > 0 ? 1.8 : 0.9).toFixed(1)}</span></div>
-            </div>
-          </div>
         </div>
       </div>
 
