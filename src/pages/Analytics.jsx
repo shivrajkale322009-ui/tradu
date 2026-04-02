@@ -9,7 +9,8 @@ import {
 import { motion } from 'framer-motion';
 import { 
   TrendingUp, TrendingDown, Target, Zap, Clock, Brain, Wallet,
-  BarChart3, PieChart as PieIcon, Activity, Flame, AlertTriangle, Info
+  BarChart3, PieChart as PieIcon, Activity, Flame, AlertTriangle, Info,
+  Grid, Calendar, ChevronLeft, ChevronRight, Layers, Layout
 } from 'lucide-react';
 
 const COLORS = ['#00f3ff', '#ff3366', '#00ff66', '#8b5cf6', '#f59e0b'];
@@ -149,7 +150,38 @@ export default function Analytics() {
         { name: 'Wins', value: wins.length },
         { name: 'Losses', value: losses.length },
         { name: 'C2C', value: c2cArr.length }
-      ]
+      ],
+      matrix: (() => {
+        const matrix = {};
+        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+        
+        trades.forEach(t => {
+          const d = new Date(t.date);
+          const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+          if (!days.includes(dayName)) return;
+
+          // Simple week of month calculation
+          const startOfMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+          const weekNo = Math.ceil((d.getDate() + startOfMonth.getDay() - (startOfMonth.getDay() === 0 ? 6 : startOfMonth.getDay()-1)) / 7) || 1;
+
+          if (!matrix[monthKey]) {
+            matrix[monthKey] = {
+              label: d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+              weeks: {},
+              total: 0
+            };
+          }
+          if (!matrix[monthKey].weeks[weekNo]) {
+            matrix[monthKey].weeks[weekNo] = { id: weekNo, days: {}, total: 0 };
+            days.forEach(day => matrix[monthKey].weeks[weekNo].days[day] = 0);
+          }
+          matrix[monthKey].weeks[weekNo].days[dayName] += Number(t.pnl);
+          matrix[monthKey].weeks[weekNo].total += Number(t.pnl);
+          matrix[monthKey].total += Number(t.pnl);
+        });
+        return Object.entries(matrix).sort((a,b) => b[0].localeCompare(a[0]));
+      })()
     };
   }, [trades]);
 
@@ -204,16 +236,84 @@ export default function Analytics() {
       </header>
       
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <StatCard title="Win Rate" value={`${analyticsData.winRate}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--success)" />
-        <StatCard title="Net PnL" value={`$${analyticsData.totalPnl}`} subtext="Collective Gains" icon={Wallet} color="var(--primary)" />
+        <StatCard title="Win Rate" value={`${analyticsData.winRate.toFixed(1)}%`} subtext={`${analyticsData.wins} Wins / ${analyticsData.losses} Losses`} icon={Target} color="var(--success)" />
+        <StatCard title="Net PnL" value={`$${analyticsData.totalPnl.toFixed(2)}`} subtext="Collective Gains" icon={Wallet} color="var(--primary)" />
         <StatCard title="Total Volume" value={analyticsData.totalTrades} subtext="Trades Logged" icon={BarChart3} color="var(--secondary)" />
         <StatCard title="Avg Profit" value={`$${analyticsData.avgPnl}`} subtext="Per Session" icon={Activity} />
+      </div>
+
+      {/* STRATEGIC PERFORMANCE MATRIX (v5.0) */}
+      <div className="glass-panel" style={{ padding: '0', marginBottom: '2rem', overflow: 'hidden' }}>
+        <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: '0.85rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Grid size={16} className="text-primary" /> PERFORMANCE_STRATEGY_MATRIX
+          </h2>
+          <div className="badge bg-muted" style={{ fontSize: '0.6rem' }}>EXCEL_AUDIT_MODE</div>
+        </div>
+        
+        <div style={{ overflowX: 'auto', padding: '1rem', background: 'rgba(0,0,0,0.2)' }}>
+          {analyticsData.matrix.map(([mKey, month]) => (
+            <div key={mKey} style={{ marginBottom: '2rem', minWidth: '800px' }}>
+              <div style={{ padding: '0.5rem 0', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                {month.label.toUpperCase()} <span className="text-muted" style={{ fontSize: '0.7rem', fontWeight: 400 }}>| TOTAL: ${month.total.toFixed(2)}</span>
+              </div>
+              <table className="performance-matrix-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                <thead>
+                  <tr>
+                    <th style={{ width: '100px', textAlign: 'left', padding: '0.5rem', color: 'var(--text-muted)' }}>WEEKDAY</th>
+                    {Object.keys(month.weeks).sort((a,b) => a-b).map(wId => (
+                      <th key={wId} style={{ border: '1px solid var(--border)', padding: '0.5rem' }}>WEEK {wId}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(day => (
+                    <tr key={day}>
+                      <td style={{ padding: '0.5rem', border: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-muted)' }}>{day.toUpperCase()}</td>
+                      {Object.keys(month.weeks).sort((a,b) => a-b).map(wId => {
+                        const pnl = month.weeks[wId].days[day];
+                        const intensity = Math.min(1, Math.abs(pnl) / 500);
+                        const bgColor = pnl === 0 ? 'rgba(255,255,255,0.02)' : 
+                                      pnl > 0 ? `rgba(0, 255, 102, ${0.15 + intensity * 0.7})` : 
+                                      `rgba(255, 51, 102, ${0.15 + intensity * 0.7})`;
+                        
+                        return (
+                          <td key={wId} style={{ 
+                            border: '1px solid var(--border)', 
+                            padding: '0.75rem', 
+                            textAlign: 'center',
+                            background: bgColor,
+                            color: pnl === 0 ? 'rgba(255,255,255,0.1)' : (Math.abs(pnl) > 100 ? '#000' : '#fff'),
+                            fontWeight: 700,
+                            transition: 'all 0.2s'
+                          }}>
+                            {pnl !== 0 ? `${pnl > 0 ? '+' : '-'}$${Math.abs(pnl).toFixed(0)}` : '0'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr style={{ background: 'rgba(255,204,0,0.05)' }}>
+                    <td style={{ padding: '0.5rem', border: '1px solid var(--border)', color: 'var(--warning)', fontWeight: 800 }}>TOTAL</td>
+                    {Object.keys(month.weeks).sort((a,b) => a-b).map(wId => (
+                      <td key={wId} style={{ border: '1px solid var(--border)', padding: '0.5rem', textAlign: 'center', color: 'var(--warning)', fontWeight: 800 }}>
+                        ${month.weeks[wId].total.toFixed(0)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="analytics-main-grid" style={{ display: 'grid', gap: '1.5rem', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 }}>
           <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <h2 className="panel-title" style={{ paddingLeft: 0, background: 'none', border: 'none' }}>Equity Curve Over Time</h2>
+            <h2 className="panel-title" style={{ paddingLeft: 0, background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Layout size={16} className="text-secondary" /> EQUITY_CURVE_AUDIT
+            </h2>
             <div style={{ height: '300px', width: '100%', marginTop: '1rem' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={analyticsData.profitCurve}>
