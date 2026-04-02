@@ -546,6 +546,46 @@ h3 { font-size: 0.9rem; }
   }
 }
 
+.workstation-link {
+  display: flex !important;
+}
+
+@media (max-width: 1023px) {
+  .workstation-link {
+    display: none !important;
+  }
+}
+
+.mobile-log-fab {
+  display: none !important;
+}
+
+@media (max-width: 1023px) {
+  .mobile-log-fab {
+    display: flex !important;
+    position: fixed;
+    bottom: 90px;
+    right: 25px;
+    width: 58px;
+    height: 58px;
+    background: rgba(0, 255, 102, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 2px solid rgba(0, 255, 102, 0.4);
+    border-radius: 50%;
+    color: var(--secondary);
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 25px rgba(0, 255, 102, 0.2), inset 0 0 10px rgba(255,255,255,0.05);
+    z-index: 9999;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mobile-log-fab:active {
+    transform: scale(0.9);
+    background: rgba(0, 255, 102, 0.25);
+  }
+}
+
 /* Responsive Trade Form Grid */
 .responsive-grid {
   display: grid;

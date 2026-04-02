@@ -13,9 +13,13 @@ export default function Navigation() {
         <LayoutDashboard size={20} />
         <span>Dashboard</span>
       </NavLink>
-      <NavLink to="/add" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+      <NavLink to="/add" className={({ isActive }) => (isActive ? 'nav-item active workstation-link' : 'nav-item workstation-link')}>
         <PlusCircle size={20} />
         <span>Log Trade</span>
+      </NavLink>
+
+      <NavLink to="/add" className="mobile-log-fab">
+        <PlusCircle size={24} />
       </NavLink>
       <NavLink to="/records" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
         <Clock size={20} />
