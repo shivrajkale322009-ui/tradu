@@ -12,10 +12,18 @@ export default function TradeDetails() {
   const [loading, setLoading] = useState(true);
   const [isLocked, setIsLocked] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Trend Following', 'Range', 'Mean Reversion']);
 
   useEffect(() => {
     loadTrade();
-  }, [id]);
+    if (currentUser) {
+      getUserProfile(currentUser.uid).then(profile => {
+        if (profile?.strategies?.length > 0) {
+          setStrategies(profile.strategies);
+        }
+      });
+    }
+  }, [id, currentUser]);
 
   const handleUpdate = async () => {
     setIsSaving(true);
@@ -111,12 +119,17 @@ export default function TradeDetails() {
                   <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', color: 'var(--primary)' }}>
                     <Target size={14} />
                     {trade.strategy.toUpperCase()}
+                </span>
+                )}
+                {trade.quality && (
+                  <span className="badge" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)' }}>
+                    Grade: <strong style={{ color: '#fff', marginLeft: '0.2rem' }}>{trade.quality.toUpperCase()}</strong>
                   </span>
                 )}
                 </>
               ) : (
                 <>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', width: '100%' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', width: '100%', marginBottom: '1rem' }}>
                   <div style={{ flex: 1, minWidth: '140px' }}>
                     <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Type</label>
                     <select 
@@ -139,16 +152,32 @@ export default function TradeDetails() {
                       style={{ padding: '0.4rem', marginTop: '0.2rem' }}
                     />
                   </div>
-                  <div style={{ flex: 1, minWidth: '140px' }}>
+                </div>
+                
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', width: '100%' }}>
+                  <div style={{ flex: 2, minWidth: '180px' }}>
                     <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Strategy</label>
                     <select 
                       className="input" 
-                      value={trade.strategy || 'Breakout'} 
+                      value={trade.strategy || strategies[0]} 
                       onChange={(e) => setTrade({...trade, strategy: e.target.value})}
                       style={{ padding: '0.4rem', marginTop: '0.2rem' }}
                     >
-                      {['Breakout', 'Scalping', 'Trend Following', 'Range', 'Mean Reversion'].map(s => (
+                      {strategies.map(s => (
                         <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={{ flex: 1, minWidth: '120px' }}>
+                    <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Quality Grade</label>
+                    <select 
+                      className="input" 
+                      value={trade.quality || 'a1'} 
+                      onChange={(e) => setTrade({...trade, quality: e.target.value})}
+                      style={{ padding: '0.4rem', marginTop: '0.2rem' }}
+                    >
+                      {['a1', 'a2', 'b1', 'b2', 'c1', 'c2', 'd'].map(q => (
+                        <option key={q} value={q}>{q.toUpperCase()}</option>
                       ))}
                     </select>
                   </div>

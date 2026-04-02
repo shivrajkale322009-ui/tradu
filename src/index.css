@@ -33,6 +33,7 @@
   --radius-full: 9999px;
   
   --transition: all 0.3s ease;
+  --font-base: 16px;
 }
 
 [data-theme='green'] {

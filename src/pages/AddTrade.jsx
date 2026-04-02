@@ -227,6 +227,7 @@ export default function AddTrade() {
     time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
     strategy: '',
     emotion: 'neutral',
+    quality: 'a1',
     notes: ''
   });
   const [imagePreview, setImagePreview] = useState(null);
@@ -485,6 +486,31 @@ export default function AddTrade() {
                 <option key={s} value={s}>{s}</option>
               ))}
             </select>
+          </div>
+        </div>
+
+        <div className="form-group grid-full">
+          <label>Grade / Quality</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.4rem' }}>
+            {['a1', 'a2', 'b1', 'b2', 'c1', 'c2', 'd'].map(q => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, quality: q }))}
+                className="btn-outline"
+                style={{
+                  padding: '0.6rem 0.2rem',
+                  fontSize: '0.75rem',
+                  textTransform: 'uppercase',
+                  fontWeight: 800,
+                  border: formData.quality === q ? '1px solid var(--primary)' : '1px solid var(--border)',
+                  background: formData.quality === q ? 'rgba(0, 240, 255, 0.1)' : 'var(--surface-light)',
+                  color: formData.quality === q ? 'var(--primary)' : 'var(--text-muted)'
+                }}
+              >
+                {q}
+              </button>
+            ))}
           </div>
         </div>
 

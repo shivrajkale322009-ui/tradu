@@ -11,6 +11,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const [favouritePairs, setFavouritePairs] = useState(['BTC/USDT', 'ETH/USDT', 'SOL/USDT']);
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
+  const [fontSize, setFontSize] = useState(16);
   const [newPair, setNewPair] = useState('');
   const [newStrategy, setNewStrategy] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -18,6 +19,12 @@ export default function Profile() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (fontSize) {
+      document.documentElement.style.setProperty('--font-base', `${fontSize}px`);
+    }
+  }, [fontSize]);
 
   useEffect(() => {
     if (currentUser) {
@@ -33,6 +40,7 @@ export default function Profile() {
     if (profile) {
       if (profile.favouritePairs) setFavouritePairs(profile.favouritePairs);
       if (profile.strategies) setStrategies(profile.strategies);
+      if (profile.fontSize) setFontSize(profile.fontSize);
       setDisplayName(profile.displayName || currentUser.displayName || '');
       setPhotoURL(profile.photoURL || currentUser.photoURL || '');
     } else {
@@ -255,7 +263,7 @@ export default function Profile() {
         
         <p className="subtitle" style={{ marginBottom: '1.25rem' }}>Select a glassmorphism theme to apply across the app.</p>
         
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
           {[
             { id: 'dark', name: 'Glass Dark', color: '#64748b' },
             { id: 'blue', name: 'Glass Blue', color: '#3b82f6' },
@@ -282,6 +290,30 @@ export default function Profile() {
               <span style={{ fontWeight: theme === t.id ? '600' : '400' }}>{t.name}</span>
             </button>
           ))}
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Master Font Scale</span>
+            <span className="text-primary" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{fontSize}px</span>
+          </div>
+          <input 
+            type="range" 
+            min="12" 
+            max="24" 
+            value={fontSize} 
+            onChange={async (e) => {
+              const val = parseInt(e.target.value);
+              setFontSize(val);
+              await updateUserProfile(currentUser.uid, { fontSize: val });
+            }}
+            style={{ width: '100%', accentColor: 'var(--primary)' }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+            <span>Compact</span>
+            <span>Default (16px)</span>
+            <span>Large</span>
+          </div>
         </div>
       </div>
 
