@@ -5,28 +5,17 @@ from datetime import datetime, timedelta
 import os
 import json
 
-# 👉 DATASET: Sample trade sessions for backend demo
-# In production, this can be loaded from a JSON file or Firestore dump
-TRADES_DATASET = [
-    {
-        "id": 1,
-        "symbol": "BTC/USDT",
-        "type": "BUY",
-        "openTime": "2024-04-02 10:00:00",
-        "closeTime": "2024-04-02 14:00:00",
-        "lots": 0.5,
-        "profit": 450.50
-    },
-    {
-        "id": 2,
-        "symbol": "ETH/USDT",
-        "type": "SELL",
-        "openTime": "2024-04-01 15:30:00",
-        "closeTime": "2024-04-01 18:45:00",
-        "lots": 2.0,
-        "profit": -120.25
-    }
-]
+# 👉 SYSTEM_CONFIG: Terminal Settings
+CHARTS_DIR = os.path.join(os.path.dirname(__file__), "..", "charts")
+DATASET_PATH = os.path.join(os.path.dirname(__file__), "..", "dataset.json")
+
+def load_trades_from_json():
+    """Loads dataset from the root project directory."""
+    if not os.path.exists(DATASET_PATH):
+        print(f"CRITICAL: Dataset not found at {DATASET_PATH}")
+        return []
+    with open(DATASET_PATH, 'r') as f:
+        return json.load(f)
 
 def generate_trade_chart(trade, index):
     symbol = trade['symbol']
@@ -34,22 +23,29 @@ def generate_trade_chart(trade, index):
     # ccxt standard symbol mapping
     exchange_symbol = symbol.replace("/", "")
     
-    open_dt = datetime.strptime(trade['openTime'], "%Y-%m-%d %H:%M:%S")
-    close_dt = datetime.strptime(trade['closeTime'], "%Y-%m-%d %H:%M:%S")
+    try:
+        open_dt = datetime.strptime(trade['openTime'], "%Y-%m-%d %H:%M:%S")
+        close_dt = datetime.strptime(trade['closeTime'], "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        # Fallback for different date formats
+        open_dt = datetime.fromisoformat(trade['openTime'].replace('Z', '+00:00'))
+        close_dt = datetime.fromisoformat(trade['closeTime'].replace('Z', '+00:00'))
     
-    # Range: 50 candles before open, 50 candles after close
-    start_dt = open_dt - timedelta(hours=4)
-    end_dt = close_dt + timedelta(hours=4)
+    # Range: 100 candles before open, 100 candles after close for context
+    start_dt = open_dt - timedelta(hours=10)
+    end_dt = close_dt + timedelta(hours=10)
     
-    print(f"HUD: Processing Trade #{index} [{symbol}]...")
+    print(f"HUD: Synchronizing Data for Session #{index} [{symbol}]...")
     
     # 👉 STEP 2: FETCH MARKET DATA (Binance via CCXT)
-    exchange = ccxt.binance()
+    exchange = ccxt.binance({
+        'enableRateLimit': True,
+    })
     
     try:
-        # Fetch OHLCV (15m timeframe)
+        # Fetch OHLCV (15m timeframe for detail)
         since = int(start_dt.timestamp() * 1000)
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe='15m', since=since, limit=200)
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe='15m', since=since, limit=300)
         
         if not ohlcv:
             print(f"ERROR: No candle data found for {symbol}")
@@ -60,47 +56,63 @@ def generate_trade_chart(trade, index):
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         df.set_index('timestamp', inplace=True)
         
+        # 👉 CALCULATE INDICATORS (EMA 20 & 50)
+        df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
+        df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
+
         # 👉 STEP 4 & 5: GENERATE CANDLESTICK CHART & HIGHLIGHT TRADE
-        # Visual Styling: Dark Matrix Theme
-        colors = mpf.make_marketcolors(up='#00ff66', down='#ff3366', inherit=True)
-        style = mpf.make_mpf_style(marketcolors=colors, gridstyle='dashed', facecolor='#0a0a0a', edgecolor='#333', 
-                                  figcolor='#0a0a0a', fontcolor='#fff', gridcolor='#222')
+        # Visual Styling: Deep Dark Cyber-Theme
+        colors = mpf.make_marketcolors(up='#00f3ff', down='#ff3366', edge='inherit', wick='inherit', volume='in')
+        style = mpf.make_mpf_style(marketcolors=colors, gridstyle='solid', facecolor='#050a19', edgecolor='#1a2035', 
+                                  figcolor='#050a19', fontcolor='#8892b0', gridcolor='#0f172a')
+
+        # Add Moving Average plots
+        adps = [
+            mpf.make_addplot(df['ema20'], color='#00f3ff', width=0.8, alpha=0.6),
+            mpf.make_addplot(df['ema50'], color='#f59e0b', width=0.8, alpha=0.6)
+        ]
 
         # Highlight lines and shade logic
         # Vertical lines for Open/Close
         vlines = [open_dt, close_dt]
-        vcolors = ['#00f3ff' if trade['type'] == 'BUY' else '#ff3366']
         
-        # Save filename: trade_<index>_<symbol>.png
+        # Save filename: session_<id>_<symbol>.png
         safe_symbol = exchange_symbol.replace("/", "_")
-        filename = f"trade_{index}_{safe_symbol}.png"
-        save_path = os.path.join("charts", filename)
+        filename = f"session_{trade.get('id', index)}_{safe_symbol}.png"
+        save_path = os.path.join(CHARTS_DIR, filename)
         
-        # 👉 STEP 6: SAVE SCREENSHOT
-        print(f"HUD: Generating chart for {symbol} | Type: {trade['type']}")
+        # 👉 STEP 6: SAVE VISUAL EVIDENCE
+        print(f"HUD: Generating Visual Intelligence for {symbol} | Result: ${trade['profit']}")
         
-        mpf.plot(df, type='candle', style=style, 
-                 title=f"\nCORE_AUDIT: {symbol} ({trade['type']}) | PROFIT: ${trade['profit']}",
-                 ylabel='Price (USDT)',
-                 vlines=dict(vlines=vlines, colors='#00f3ff', linewidths=2, alpha=0.5),
-                 savefig=dict(fname=save_path, dpi=150, bbox_inches='tight'),
+        mpf.plot(df, type='candle', style=style, addplot=adps,
+                 title=f"\nSESSION_AUDIT: #{trade.get('id', index)} | {symbol} ({trade['type']})",
+                 ylabel='Price_USDT',
+                 vlines=dict(vlines=vlines, colors='#94a3b8', linewidths=1.5, alpha=0.3, linestyle='--'),
+                 savefig=dict(fname=save_path, dpi=180, bbox_inches='tight'),
                  show_nontrading=False,
                  tight_layout=True)
         
-        print(f"SUCCESS: Chart saved to {save_path}\n")
+        print(f"SUCCESS: Visual Evidence Stored at {save_path}\n")
 
     except Exception as e:
-        print(f"CRITICAL_FAILURE: {str(e)}")
+        print(f"CRITICAL_FAILURE in Session Visualization: {str(e)}")
 
 def main():
-    # 👉 OPTIONAL: LOOP ALL TRADES
-    if not os.path.exists("charts"):
-        os.makedirs("charts")
+    if not os.path.exists(CHARTS_DIR):
+        os.makedirs(CHARTS_DIR)
         
-    print("TERMINAL: Chart Generation Engine v5.2 Initialized.\n")
-    for i, trade in enumerate(TRADES_DATASET, 1):
+    print("TERMINAL: Visual Data Generator v6.0 [TRADU ENGINE] Initialized.\n")
+    
+    trades = load_trades_from_json()
+    if not trades:
+        print("TERMINAL: Empty dataset detected. Aborting feed.")
+        return
+
+    for i, trade in enumerate(trades, 1):
         generate_trade_chart(trade, i)
-    print("TERMINAL: All session visualizations completed.\n")
+        
+    print(f"TERMINAL: {len(trades)} session visualizations integrated into archive.\n")
 
 if __name__ == "__main__":
     main()
+
