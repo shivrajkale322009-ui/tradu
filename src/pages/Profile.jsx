@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getUserProfile, updateUserProfile, saveTrade, createSharedJournal, joinSharedJournal, leaveSharedJournal } from '../utils/db';
+import { getUserProfile, updateUserProfile, saveTrade, createSharedJournal, joinSharedJournal, leaveSharedJournal, recoverySweep } from '../utils/db';
 import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database, Users, Share2, Activity, Link as LinkIcon, Copy } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -146,6 +146,35 @@ export default function Profile() {
     const shareUrl = `${window.location.origin}/profile?join=${hostedJournalCode}`;
     navigator.clipboard.writeText(shareUrl);
     alert("LINK_COPIED: Share this with your co-analyst to auto-sync.");
+  };
+
+  const handleDeepRecovery = async () => {
+    try {
+      setLoading(true);
+      setMigrationStatus('SCANNING_VAULT...');
+      // 1. Force back to private journal first
+      await leaveSharedJournal(currentUser.uid);
+      
+      // 2. Scan every trade ever made by this user
+      const allTrades = await recoverySweep(currentUser.uid);
+      
+      if (allTrades.length > 0) {
+        setMigrationStatus(`RECOVERED_${allTrades.length}_TRADES`);
+        alert(`SUCCESS: Found ${allTrades.length} trades in your private vault. Synchronizing terminal...`);
+        // Force refresh profile state
+        await loadProfile();
+        // Redirect to dashboard to see the 309 trades
+        navigate('/');
+      } else {
+        setMigrationStatus('COULD_NOT_LOCATE_JOURNALS');
+        alert("CRITICAL: No additional trades found for this UID. Check if you logged in with a different account.");
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setMigrationStatus('RECOVERY_ERROR');
+      setLoading(false);
+    }
   };
 
   const handleLeaveSync = async () => {
@@ -525,6 +554,30 @@ export default function Profile() {
             <span>Large</span>
           </div>
         </div>
+
+          <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <Shield size={20} className="text-secondary" /> EMERGENCY_ARCHIVE_RECOVERY
+            </h3>
+            <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1.5rem' }}>
+               Lost connection to your records? This will sweep your entire cloud database and pull 
+               every trade ever logged back into this terminal.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+               <button 
+                 onClick={handleDeepRecovery} 
+                 className="btn-outline" 
+                 style={{ borderColor: 'var(--secondary)', color: 'var(--secondary)', fontSize: '0.75rem' }}
+               >
+                  EXECUTE_DEEP_LEVEL_SWEEP
+               </button>
+               {migrationStatus && (
+                 <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.1)', color: 'var(--secondary)' }}>
+                    {migrationStatus}
+                 </span>
+               )}
+            </div>
+          </div>
 
         <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2.5rem', borderLeft: '3px solid var(--secondary)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>

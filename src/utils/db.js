@@ -167,6 +167,23 @@ export const updateTrade = async (id, data) => {
   }
 };
 
+export const recoverySweep = async (userId) => {
+  if (!firestore || !userId) return [];
+  try {
+    // This query ignores journals and finds EVERYTHING owned by this UID
+    const q = query(collection(firestore, TRADES_COLLECTION), where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      image: doc.data().imageUrl
+    }));
+  } catch (err) {
+    console.error('CRITICAL_RECOVERY_FAILURE', err);
+    return [];
+  }
+};
+
 export const deleteTrade = async (id) => {
   if (!firestore) return;
   try {
