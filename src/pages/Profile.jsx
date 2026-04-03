@@ -535,6 +535,7 @@ export default function Profile() {
             <span style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>$</span>
             <input 
               type="number" 
+              step="any"
               className="input" 
               placeholder="e.g. 10000" 
               value={capital}
