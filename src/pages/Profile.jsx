@@ -170,16 +170,15 @@ export default function Profile() {
     try {
       const lines = migrationData.trim().split('\n');
       let count = 0;
-      let lastSeq = 0;
 
       for (const line of lines) {
         if (!line.trim() || line.includes('TRADE NO.')) continue;
         
         // Handle tab-separated or space-separated mapping
         const parts = line.split('\t').map(s => s.trim());
-        if (parts.length < 7) continue;
+        if (parts.length < 6) continue;
 
-        const [seq, openTime, closeTime, type, lots, pair, pnl] = parts;
+        const [openTime, closeTime, type, lots, pair, pnl] = parts;
         
         if (openTime && pair && type) {
           setMigrationStatus(`FEEDING_TRADE: ${++count} / ${lines.length}`);
@@ -651,12 +650,12 @@ export default function Profile() {
         <p className="subtitle" style={{ color: 'var(--text-muted)' }}>
           PASTE_TAB_DATA: Copy columns directly from your spreadsheet into the terminal.
           <br/>
-          <strong>FORMAT:</strong> TradeNo | OpenTime | CloseTime | Type | Lots | Symbol | Profit
+          <strong>FORMAT:</strong> OpenTime | CloseTime | Type | Lots | Symbol | Profit
         </p>
 
         <textarea
           className="input"
-          placeholder="297	2026-04-02 13:41:31	2026-04-02 13:45:48	sell	0.01	BTCUSDm	-1.79"
+          placeholder="2026-04-02 13:41:31	2026-04-02 13:45:48	sell	0.01	BTCUSDm	-1.79"
           value={migrationData}
           onChange={(e) => setMigrationData(e.target.value)}
           disabled={isMigrating}
