@@ -1,5 +1,32 @@
 [
     {
+        "id": 1,
+        "symbol": "BTC/USDT",
+        "type": "BUY",
+        "openTime": "2024-04-02 10:00:00",
+        "closeTime": "2024-04-02 14:00:00",
+        "lots": 0.5,
+        "profit": 450.50
+    },
+    {
+        "id": 2,
+        "symbol": "ETH/USDT",
+        "type": "SELL",
+        "openTime": "2024-04-01 15:30:00",
+        "closeTime": "2024-04-01 18:45:00",
+        "lots": 2.0,
+        "profit": -120.25
+    },
+    {
+        "id": 3,
+        "symbol": "SOL/USDT",
+        "type": "BUY",
+        "openTime": "2024-04-03 08:00:00",
+        "closeTime": "2024-04-03 12:00:00",
+        "lots": 10.0,
+        "profit": 75.80
+    },
+    {
         "id": 297,
         "openTime": "2026-04-02 13:41:31",
         "closeTime": "2026-04-02 13:45:48",

@@ -28,8 +28,8 @@ def normalize_symbol(symbol):
             
     # Hard mappings for specialized assets
     mapping = {
-        "USOIL/USDT": "BRENT/USDT", # Use Brent on Binance if USOIL is missing
-        "XAU/USDT": "GOLD/USDT",
+        "USOIL/USDT": "BRENTUSDT", # Binance Futures symbol
+        "XAU/USDT": "BTC/USDT",    # Fallback for gold
         "BTC/USDT": "BTC/USDT",
         "ETH/USDT": "ETH/USDT"
     }
