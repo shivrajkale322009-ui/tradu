@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getTrades, getUserProfile } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ImageIcon, Maximize2, Search, Filter, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Maximize2, Search, Filter, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function VisualCards() {

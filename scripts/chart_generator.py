@@ -28,8 +28,8 @@ def normalize_symbol(symbol):
             
     # Hard mappings for specialized assets
     mapping = {
-        "USOIL/USDT": "CL/USDT", # Crude Oil mapping
-        "XAU/USDT": "GOLD/USDT", # Gold mapping
+        "USOIL/USDT": "BRENT/USDT", # Use Brent on Binance if USOIL is missing
+        "XAU/USDT": "GOLD/USDT",
         "BTC/USDT": "BTC/USDT",
         "ETH/USDT": "ETH/USDT"
     }
@@ -92,7 +92,7 @@ def generate_trade_chart(trade, index):
         # Visual Styling: Deep Dark Cyber-Theme
         colors = mpf.make_marketcolors(up='#00f3ff', down='#ff3366', edge='inherit', wick='inherit', volume='in')
         style = mpf.make_mpf_style(marketcolors=colors, gridstyle='solid', facecolor='#050a19', edgecolor='#1a2035', 
-                                  figcolor='#050a19', fontcolor='#8892b0', gridcolor='#0f172a')
+                                  figcolor='#050a19', gridcolor='#0f172a', rc={'font.family': 'monospace', 'text.color': '#8892b0'})
 
         # Add Moving Average plots
         adps = [
@@ -111,7 +111,7 @@ def generate_trade_chart(trade, index):
         save_path = os.path.join(CHARTS_DIR, filename)
         
         # 👉 STEP 6: SAVE VISUAL EVIDENCE
-        print(f"HUD: Generating Visual Intelligence for {symbol} | Result: ${trade['profit']}")
+        print(f"HUD: Finalizing Visualization for {symbol} | Result: ${trade['profit']}")
         
         mpf.plot(df, type='candle', style=style, addplot=adps,
                  title=f"\nSESSION_AUDIT: #{trade.get('id', index)} | {symbol} ({trade['type']})",

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Database } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Database, Image as ImageIcon } from 'lucide-react';
 
 export default function Navigation() {
   return (
