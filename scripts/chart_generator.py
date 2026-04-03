@@ -56,8 +56,9 @@ def generate_trade_chart(trade, index):
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
         df.set_index('timestamp', inplace=True)
         
-        # 👉 CALCULATE INDICATORS (EMA 20 & 50)
-        df['ema20'] = df['close'].ewm(span=20, adjust=False).mean()
+        # 👉 CALCULATE INDICATORS (EMA 9, 15, & 50)
+        df['ema9'] = df['close'].ewm(span=9, adjust=False).mean()
+        df['ema15'] = df['close'].ewm(span=15, adjust=False).mean()
         df['ema50'] = df['close'].ewm(span=50, adjust=False).mean()
 
         # 👉 STEP 4 & 5: GENERATE CANDLESTICK CHART & HIGHLIGHT TRADE
@@ -68,8 +69,9 @@ def generate_trade_chart(trade, index):
 
         # Add Moving Average plots
         adps = [
-            mpf.make_addplot(df['ema20'], color='#00f3ff', width=0.8, alpha=0.6),
-            mpf.make_addplot(df['ema50'], color='#f59e0b', width=0.8, alpha=0.6)
+            mpf.make_addplot(df['ema9'], color='#00f3ff', width=0.7, alpha=0.8),
+            mpf.make_addplot(df['ema15'], color='#ec4899', width=0.7, alpha=0.6), # Hot Pink
+            mpf.make_addplot(df['ema50'], color='#f59e0b', width=1.0, alpha=0.4)  # Amber
         ]
 
         # Highlight lines and shade logic
