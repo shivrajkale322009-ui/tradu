@@ -1,29 +1,47 @@
 [
     {
-        "id": 1,
-        "symbol": "BTC/USDT",
-        "type": "BUY",
-        "openTime": "2024-04-02 10:00:00",
-        "closeTime": "2024-04-02 14:00:00",
-        "lots": 0.5,
-        "profit": 450.50
+        "id": 297,
+        "openTime": "2026-04-02 13:41:31",
+        "closeTime": "2026-04-02 13:45:48",
+        "type": "sell",
+        "lots": "0.01",
+        "symbol": "BTCUSDm",
+        "profit": -1.79
     },
     {
-        "id": 2,
-        "symbol": "ETH/USDT",
-        "type": "SELL",
-        "openTime": "2024-04-01 15:30:00",
-        "closeTime": "2024-04-01 18:45:00",
-        "lots": 2.0,
-        "profit": -120.25
+        "id": 298,
+        "openTime": "2026-04-02 13:02:42",
+        "closeTime": "2026-04-02 13:30:01",
+        "type": "sell",
+        "lots": "0.01",
+        "symbol": "BTCUSDm",
+        "profit": -1.97
     },
     {
-        "id": 3,
-        "symbol": "SOL/USDT",
-        "type": "BUY",
-        "openTime": "2024-04-03 08:00:00",
-        "closeTime": "2024-04-03 12:00:00",
-        "lots": 10.0,
-        "profit": 75.80
+        "id": 299,
+        "openTime": "2026-04-01 14:50:07",
+        "closeTime": "2026-04-01 15:38:32",
+        "type": "buy",
+        "lots": "0.02",
+        "symbol": "BTCUSDm",
+        "profit": 4.01
+    },
+    {
+        "id": 300,
+        "openTime": "2026-04-01 14:50:29",
+        "closeTime": "2026-04-01 15:28:28",
+        "type": "sell",
+        "lots": "0.01",
+        "symbol": "BTCUSDm",
+        "profit": -1.57
+    },
+    {
+        "id": 301,
+        "openTime": "2026-04-01 13:31:09",
+        "closeTime": "2026-04-01 13:31:30",
+        "type": "sell",
+        "lots": "0.01",
+        "symbol": "USOILm",
+        "profit": -1.75
     }
 ]

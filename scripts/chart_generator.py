@@ -17,17 +17,44 @@ def load_trades_from_json():
     with open(DATASET_PATH, 'r') as f:
         return json.load(f)
 
+def normalize_symbol(symbol):
+    """Translates MetaTrader symbols (BTCUSDm) to CCXT/Binance format (BTC/USDT)."""
+    s = symbol.upper().replace("USD", "/USDT")
+    
+    # Remove common MetaTrader suffixes
+    for suffix in ["M", "+", ".", "PRO", "FX"]:
+        if s.endswith(suffix):
+            s = s[:-len(suffix)]
+            
+    # Hard mappings for specialized assets
+    mapping = {
+        "USOIL/USDT": "CL/USDT", # Crude Oil mapping
+        "XAU/USDT": "GOLD/USDT", # Gold mapping
+        "BTC/USDT": "BTC/USDT",
+        "ETH/USDT": "ETH/USDT"
+    }
+    
+    # Ensure it ends with /USDT if not present
+    if not "/" in s:
+        s = f"{s}/USDT"
+        
+    return mapping.get(s, s)
+
 def generate_trade_chart(trade, index):
-    symbol = trade['symbol']
+    raw_symbol = trade['symbol']
+    symbol = normalize_symbol(raw_symbol)
+    
     # 👉 STEP 1: SELECT TRADE & EXTRACT DATA
-    # ccxt standard symbol mapping
     exchange_symbol = symbol.replace("/", "")
     
     try:
-        open_dt = datetime.strptime(trade['openTime'], "%Y-%m-%d %H:%M:%S")
-        close_dt = datetime.strptime(trade['closeTime'], "%Y-%m-%d %H:%M:%S")
-    except ValueError:
-        # Fallback for different date formats
+        # Support both ' ' and 'T' separators in timestamps
+        ots = trade['openTime'].replace('T', ' ').split('.')[0]
+        cts = trade['closeTime'].replace('T', ' ').split('.')[0]
+        open_dt = datetime.strptime(ots, "%Y-%m-%d %H:%M:%S")
+        close_dt = datetime.strptime(cts, "%Y-%m-%d %H:%M:%S")
+    except Exception as e:
+        print(f"HUD_WARNING: Date parsing failed for {raw_symbol}. Attempting ISO fallback...")
         open_dt = datetime.fromisoformat(trade['openTime'].replace('Z', '+00:00'))
         close_dt = datetime.fromisoformat(trade['closeTime'].replace('Z', '+00:00'))
     
