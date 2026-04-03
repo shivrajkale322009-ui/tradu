@@ -1,7 +1,7 @@
 {
   "name": "trade-insight",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1+tradu-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",
