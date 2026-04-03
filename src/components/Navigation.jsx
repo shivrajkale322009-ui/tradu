@@ -29,6 +29,10 @@ export default function Navigation() {
         <BarChart2 size={20} />
         <span>Analytics</span>
       </NavLink>
+      <NavLink to="/visuals" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
+        <ImageIcon size={20} />
+        <span>Visuals</span>
+      </NavLink>
       <NavLink to="/data" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
         <Database size={20} />
         <span>Data</span>
