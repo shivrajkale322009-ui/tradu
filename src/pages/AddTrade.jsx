@@ -351,9 +351,9 @@ export default function AddTrade() {
     const interval = setInterval(() => {
       setSyncProgress(prev => {
         if (prev >= 90) return prev; // Hold at 90 until done
-        return prev + 5;
+        return prev + 10;
       });
-    }, 150);
+    }, 40);
 
     try {
       const profile = await getUserProfile(currentUser.uid);
@@ -367,10 +367,10 @@ export default function AddTrade() {
       setSyncProgress(100);
       setSyncStatus('success');
       
-      // Hold success screen for 1.5 seconds so they can see the effect
+      // Hold success screen for 0.8 seconds so they can see the effect
       setTimeout(() => {
         navigate('/');
-      }, 1500);
+      }, 800);
     } catch (error) {
       clearInterval(interval);
       setIsSubmitting(false);

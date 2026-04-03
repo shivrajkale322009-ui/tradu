@@ -32,8 +32,8 @@ export default function TradeDetails() {
     }
   }, [id, currentUser]);
 
-  const loadTrade = async () => {
-    setLoading(true);
+  const loadTrade = async (silent = false) => {
+    if (!silent) setLoading(true);
     const data = await getTradeById(id);
     if (!data) {
       navigate('/');
@@ -61,8 +61,8 @@ export default function TradeDetails() {
     try {
       await updateTrade(id, trade);
       setIsLocked(true);
-      // Re-calculate rank in case date/time changed
-      loadTrade();
+      // Re-calculate rank silently in case date/time changed
+      loadTrade(true);
     } catch (error) {
       console.error("Update failed", error);
       alert("System error: Failed to sync data.");
