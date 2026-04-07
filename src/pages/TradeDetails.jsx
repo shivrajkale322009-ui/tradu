@@ -59,13 +59,19 @@ export default function TradeDetails() {
   const handleUpdate = async () => {
     setIsSaving(true);
     try {
-      await updateTrade(id, trade);
+      // 1. Instantly update UI state
       setIsLocked(true);
-      // Re-calculate rank silently in case date/time changed
-      loadTrade(true);
+      
+      // 2. Perform the database sync in the background
+      await updateTrade(id, trade);
+      
+      // 3. Silent re-sync of rank ONLY if relevant fields changed
+      // This prevents the "300+ trade fetch" lag
+      loadTrade(true).catch(e => console.error("Background sync error", e));
     } catch (error) {
       console.error("Update failed", error);
       alert("System error: Failed to sync data.");
+      setIsLocked(false);
     } finally {
       setIsSaving(false);
     }

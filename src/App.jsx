@@ -7,7 +7,6 @@ import TradeDetails from './pages/TradeDetails';
 import Profile from './pages/Profile';
 import Records from './pages/Records';
 import Analytics from './pages/Analytics';
-import Data from './pages/Data';
 import VisualCards from './pages/VisualCards';
 import Navigation from './components/Navigation';
 import MatrixBackground from './components/MatrixBackground';
@@ -47,7 +46,6 @@ function App() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/records" element={<Records />} />
                   <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/data" element={<Data />} />
                   <Route path="/visuals" element={<VisualCards />} />
                 </Routes>
               </main>

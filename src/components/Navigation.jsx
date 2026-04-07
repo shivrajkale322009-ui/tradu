@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Database, Image as ImageIcon } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Image as ImageIcon } from 'lucide-react';
 
 export default function Navigation() {
   return (
@@ -32,10 +32,6 @@ export default function Navigation() {
       <NavLink to="/visuals" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
         <ImageIcon size={20} />
         <span>Visuals</span>
-      </NavLink>
-      <NavLink to="/data" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-        <Database size={20} />
-        <span>Data</span>
       </NavLink>
       <NavLink to="/profile" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
         <User size={20} />
