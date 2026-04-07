@@ -655,7 +655,7 @@ export default function Profile() {
         <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2.5rem', borderLeft: '3px solid var(--secondary)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
             <Zap size={18} className="text-secondary" />
-            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Visual Intelligence API (Alpha Vantage)</span>
+            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Visual Intelligence API (Twelve Data)</span>
           </div>
           <input 
             type="password" 
@@ -669,7 +669,7 @@ export default function Profile() {
             style={{ width: '100%', padding: '0.75rem' }}
           />
           <p style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-            Required for the "Fetch Screenshot" feature. Get your key at <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>alphavantage.co</a>.
+            Required for the "Fetch Screenshot" feature. Get your key at <a href="https://twelvedata.com" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>twelvedata.com</a>.
           </p>
         </div>
       </div>

@@ -391,7 +391,7 @@ export default function AddTrade() {
   };
   const handleFetchPrice = async () => {
     if (!twelveDataKey) {
-      alert("PLEASE_CONFIGURE_API_KEY: Go to Profile > Visual Intelligence Settings and enter your Alpha Vantage API key.");
+      alert("PLEASE_CONFIGURE_API_KEY: Go to Profile > Visual Intelligence Settings to auto-fetch prices.");
       return;
     }
     if (!formData.pair || !formData.date || !formData.time) {
@@ -420,49 +420,19 @@ export default function AddTrade() {
       const offsetMinutes = parseTimezoneToMinutes(userTimezone);
       const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
 
-        let url = '';
-      if (symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('SOL') || symbol.includes('USDT')) {
-        let coin = symbol.replace('USDT', '').replace('USD', '').replace('/', '');
-        url = `https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=${coin}&market=USD&interval=1min&outputsize=full&apikey=${twelveDataKey}`;
-      } else {
-        url = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=1min&outputsize=full&apikey=${twelveDataKey}`;
-      }
+      // Fetch 1min candle exactly at the trade time
+      const start = new Date(tradeUtcTime.getTime() - 60000).toISOString().replace('T', ' ').slice(0, 19);
+      const end = new Date(tradeUtcTime.getTime() + 60000).toISOString().replace('T', ' ').slice(0, 19);
       
-      const response = await fetch(url);
+      const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1min&start_date=${start}&end_date=${end}&order=ASC&apikey=${twelveDataKey}`);
       const data = await response.json();
       
-      if (data['Error Message'] || data['Information']?.includes('rate limit')) {
-        throw new Error(data['Error Message'] || "API Rate Limit Exceeded");
-      }
+      if (data.status === 'error') throw new Error(data.message);
+      if (!data.values || data.values.length === 0) throw new Error("NO_DATA_FOUND_FOR_SESSION_TIME");
 
-      const timeSeriesKey = Object.keys(data).find(k => k.includes('Time Series'));
-      if (!timeSeriesKey || !data[timeSeriesKey]) throw new Error("NO_DATA_FOUND_FOR_SESSION_TIME");
-
-      const timeSeries = data[timeSeriesKey];
-      
-      // Alpha vantage sometimes uses US/Eastern or UTC. We will try to find the closest timestamp.
-      // We'll search for the closest timestamp within +- 2 days to account for timezone differences
-      const targetTime = tradeUtcTime.getTime();
-      let closestDiff = Infinity;
-      let closestPrice = null;
-
-      for (const [timestampStr, candle] of Object.entries(timeSeries)) {
-        // timestampStr is normally 'YYYY-MM-DD HH:MM:SS'
-        // If crypto, it's UTC. If stock, it's US/Eastern. This makes perfect matching tricky.
-        // We evaluate absolute distance locally
-        const ds = new Date(timestampStr.replace(' ', 'T') + 'Z').getTime(); // Assume UTC for sorting comparison
-        const diff = Math.abs(ds - targetTime);
-        if (diff < closestDiff) {
-          closestDiff = diff;
-          closestPrice = parseFloat(candle['1. open']);
-        }
-      }
-
-      if (closestPrice === null || closestDiff > 24 * 60 * 60 * 1000) {
-         throw new Error("PUNCTUAL_CANDLE_NOT_FOUND");
-      }
-
-      setFormData(prev => ({ ...prev, entry: closestPrice.toString() }));
+      // Use the open price of the exact candle
+      const price = parseFloat(data.values[0].open);
+      setFormData(prev => ({ ...prev, entry: price.toString() }));
       
     } catch (err) {
       console.error("Auto fetch price failed:", err);
