@@ -113,8 +113,7 @@ export default function TradeDetails() {
     setIsFetchingScreenshot(true);
     try {
       const lotVal = parseFloat(trade.lots) || 0.01;
-      const entryVal = parseFloat(trade.entry);
-      if (!entryVal) throw new Error("MISSING_ENTRY_PRICE");
+      let entryVal = parseFloat(trade.entry);
 
       // Normalize symbol for Twelve Data
       let symbol = trade.pair.replace('m', '').replace('PRO', '').replace('+', '').toUpperCase();
@@ -136,8 +135,23 @@ export default function TradeDetails() {
       
       const tradeLocalTime = new Date(`${trade.date}T${trade.time || '00:00'}:00`);
       const offsetMinutes = parseTimezoneToMinutes(userTimezone);
-      // tradeLocalTime is now treated as local. Convert to UTC:
       const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
+
+      // Auto-fetch entry price if missing
+      if (!entryVal || isNaN(entryVal)) {
+        const start1m = new Date(tradeUtcTime.getTime() - 60000).toISOString().replace('T', ' ').slice(0, 19);
+        const end1m = new Date(tradeUtcTime.getTime() + 60000).toISOString().replace('T', ' ').slice(0, 19);
+        const res1m = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1min&start_date=${start1m}&end_date=${end1m}&order=ASC&apikey=${twelveDataKey}`);
+        const data1m = await res1m.json();
+        
+        if (data1m.status === 'error' || !data1m.values || data1m.values.length === 0) {
+          throw new Error("ENTRY_PRICE_MISSING_AND_API_UNAVAILABLE");
+        }
+        
+        entryVal = parseFloat(data1m.values[0].open);
+        // Silently update state so UI reflects it
+        trade.entry = entryVal.toString();
+      }
       
       // We request candles ± 10 hours (40 candles of 15m) around the entry UTC time
       const start = new Date(tradeUtcTime.getTime() - 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
