@@ -223,6 +223,8 @@ export default function AddTrade() {
     pair: 'BTC/USDT',
     type: 'long',
     pnl: '',
+    entry: '',
+    lots: '0.01',
     date: new Date().toISOString().slice(0, 10),
     time: new Date().toISOString().slice(11, 16), // HH:mm format in UTC
     strategy: '',
@@ -437,6 +439,34 @@ export default function AddTrade() {
               <option value="short">Short</option>
             </select>
           </div>
+          <div className="form-group flex-1">
+            <label>Entry Price</label>
+            <input
+              type="number"
+              step="any"
+              name="entry"
+              value={formData.entry}
+              onChange={handleChange}
+              placeholder="e.g. 68450.00"
+              className="input"
+              required
+            />
+          </div>
+          <div className="form-group flex-1">
+            <label>Position Size (Lots)</label>
+            <input
+              type="number"
+              step="0.01"
+              name="lots"
+              value={formData.lots}
+              onChange={handleChange}
+              className="input"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-group-row-responsive">
           <div className="form-group flex-1">
             <label>Date</label>
             <input

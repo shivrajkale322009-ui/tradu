@@ -351,6 +351,9 @@ export default function TradeDetails() {
                     {new Date(`${trade.date}T${trade.time || '00:00'}Z`).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
                   </span>
                   <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', color: 'var(--primary)' }}>
+                    ENTRY: {trade.entry || '---'}
+                  </span>
+                  <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', color: 'var(--secondary)' }}>
                     {trade.strategy?.toUpperCase() || 'NO_STRATEGY'}
                   </span>
                   <span className="badge" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)' }}>
@@ -379,6 +382,10 @@ export default function TradeDetails() {
                   <div>
                     <label style={{ fontSize: '0.6rem' }}>Session Time</label>
                     <input type="time" className="input" value={trade.time} onChange={e => setTrade({...trade, time: e.target.value})} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.6rem' }}>Entry Price</label>
+                    <input type="number" step="any" className="input" value={trade.entry} onChange={e => setTrade({...trade, entry: e.target.value})} />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.6rem' }}>Position Size (Lots)</label>
