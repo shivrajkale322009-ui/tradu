@@ -142,31 +142,22 @@ export default function TradeDetails() {
         return sign * (h * 60 + (m || 0));
       };
       
-      let dateRaw = trade.date || "";
-      let yyyy, mm, dd;
-      
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
-        [yyyy, mm, dd] = dateRaw.split('-');
-      } else if (/^\d{2}-\d{2}-\d{4}$/.test(dateRaw)) {
-        [dd, mm, yyyy] = dateRaw.split('-');
-      } else {
-        const d = new Date(dateRaw);
-        if (!isNaN(d.getTime())) {
-          yyyy = d.getFullYear();
-          mm = String(d.getMonth() + 1).padStart(2, '0');
-          dd = String(d.getDate()).padStart(2, '0');
-        }
+      // ✅ Step 1: convert FIRST
+      const rawDate = trade.date || ""; // "DD-MM-YYYY" or "YYYY-MM-DD"
+      const rawTime = trade.time || "00:00";
+      let formattedDate = rawDate;
+
+      if (/^\d{2}-\d{2}-\d{4}$/.test(rawDate)) {
+        const [day, month, year] = rawDate.split("-");
+        formattedDate = `${year}-${month}-${day}`;
       }
 
-      if (!yyyy || !mm || !dd) {
-        setIsFetchingScreenshot(false);
-        alert("Invalid date or time format. Please edit the trade and ensure date is selected properly.");
-        return;
-      }
+      // ✅ Step 2: combine
+      const datetime = `${formattedDate}T${rawTime}:00`;
 
-      const cleanIsoString = `${yyyy}-${mm}-${dd}T${trade.time || '00:00'}:00`;
-      const tradeLocalTime = new Date(cleanIsoString);
-      
+      // ✅ Step 3: validate AFTER
+      const tradeLocalTime = new Date(datetime);
+
       if (isNaN(tradeLocalTime.getTime())) {
         setIsFetchingScreenshot(false);
         alert("Invalid date or time format. Please edit the trade and ensure date is selected properly.");
