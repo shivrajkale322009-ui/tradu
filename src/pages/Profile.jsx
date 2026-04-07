@@ -27,6 +27,8 @@ export default function Profile() {
   const [joinCode, setJoinCode] = useState('');
   const [activeJournalId, setActiveJournalId] = useState('');
   const [hostedJournalCode, setHostedJournalCode] = useState('');
+  const [timezone, setTimezone] = useState('+00:00');
+  const [sourceTimezone, setSourceTimezone] = useState('+00:00');
 
   useEffect(() => {
     if (fontSize) {
@@ -59,6 +61,7 @@ export default function Profile() {
       setHostedJournalCode(profile.journalCode || '');
       setDisplayName(profile.displayName || currentUser.displayName || '');
       setPhotoURL(profile.photoURL || currentUser.photoURL || '');
+      if (profile.timezone) setTimezone(profile.timezone);
     } else {
       setActiveJournalId(currentUser.uid);
       setDisplayName(currentUser.displayName || '');
@@ -212,20 +215,27 @@ export default function Profile() {
         if (openTime && pair && type) {
           setMigrationStatus(`FEEDING_TRADE: ${++count} / ${lines.length}`);
           
-          // Tactical Timezone Correction: IST (UTC+5:30) to ISO (UTC)
-          // MT4 format: 2026-04-02 13:41:31
-          const normalizedTime = openTime.replace(/-/g, '/');
-          const istDate = new Date(`${normalizedTime} GMT+0530`);
-          const utcISO = istDate.toISOString(); 
-          const [datePart, timePartFull] = utcISO.split('T');
-          const timePart = timePartFull.split('.')[0]; // HH:mm:ss
+           // Tactical Timezone Correction
+           // 1. Calculate input time relative to Source Timezone
+           const normalizedTime = openTime.replace(/-/g, '/');
+           const sourceOffset = sourceTimezone.replace(':', '');
+           const sourceDate = new Date(`${normalizedTime} GMT${sourceOffset}`);
+           
+           // 2. Adjust to User's Living Timezone
+           const userOffsetMinutes = parseTimezoneToMinutes(timezone);
+           const localTime = new Date(sourceDate.getTime() + (userOffsetMinutes * 60000));
+           
+           // 3. Extract parts (storing as local time as requested)
+           const datePart = localTime.toISOString().split('T')[0];
+           const timePart = localTime.toISOString().split('T')[1].split('.')[0];
 
-          // Convert closing time if present
-          let closingTimeUTC = null;
-          if (closeTime) {
-            const istClose = new Date(`${closeTime.replace(/-/g, '/')} GMT+0530`);
-            closingTimeUTC = istClose.toISOString();
-          }
+           // Convert closing time if present
+           let closingTimeUTC = null;
+           if (closeTime) {
+             const sourceClose = new Date(`${closeTime.replace(/-/g, '/')} GMT${sourceOffset}`);
+             const localClose = new Date(sourceClose.getTime() + (userOffsetMinutes * 60000));
+             closingTimeUTC = localClose.toISOString();
+           }
 
           await saveTrade({
             date: datePart,
@@ -255,6 +265,18 @@ export default function Profile() {
       setIsMigrating(false);
     }
   };
+
+  const parseTimezoneToMinutes = (offset) => {
+    const sign = offset.startsWith('-') ? -1 : 1;
+    const [hours, minutes] = offset.slice(1).split(':').map(Number);
+    return sign * (hours * 60 + minutes);
+  };
+
+  const timezoneOptions = [
+    '-12:00', '-11:00', '-10:00', '-09:00', '-08:00', '-07:00', '-06:00', '-05:00', '-04:00', '-03:00', '-02:00', '-01:00',
+    '+00:00', '+01:00', '+02:00', '+03:00', '+03:30', '+04:00', '+04:30', '+05:00', '+05:30', '+05:45', '+06:00', '+06:30',
+    '+07:00', '+08:00', '+08:45', '+09:00', '+09:30', '+10:00', '+10:30', '+11:00', '+12:00', '+12:45', '+13:00', '+14:00'
+  ];
 
   const handleAddPair = async (e) => {
     e.preventDefault();
@@ -600,8 +622,31 @@ export default function Profile() {
               style={{ paddingLeft: '2rem', fontSize: '1.1rem', fontWeight: 700, color: 'var(--secondary)' }}
             />
           </div>
-          <p style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+           <p style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             This capital will be used to calculate your overall ROI and account growth performance.
+          </p>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2.5rem', borderLeft: '3px solid var(--primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <Clock size={18} className="text-primary" />
+            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Living Timezone (UTC)</span>
+          </div>
+          <select 
+            className="input" 
+            value={timezone}
+            onChange={async (e) => {
+              setTimezone(e.target.value);
+              await updateUserProfile(currentUser.uid, { timezone: e.target.value });
+            }}
+            style={{ width: '100%', padding: '0.75rem', cursor: 'pointer' }}
+          >
+            {timezoneOptions.map(opt => (
+              <option key={opt} value={opt} style={{ background: '#1a1a1a' }}>UTC {opt}</option>
+            ))}
+          </select>
+          <p style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            All migrated trades will be adjusted to this timezone for consistent logging.
           </p>
         </div>
       </div>
@@ -701,11 +746,51 @@ export default function Profile() {
           <h2 style={{ fontSize: '1.25rem', margin: 0, color: 'var(--danger)' }}>Tactical Archive Migration</h2>
         </div>
         
-        <p className="subtitle" style={{ color: 'var(--text-muted)' }}>
+         <p className="subtitle" style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
           PASTE_TAB_DATA: Copy columns directly from your spreadsheet into the terminal.
           <br/>
           <strong>FORMAT:</strong> OpenTime | CloseTime | Type | Lots | Symbol | Profit
         </p>
+
+        <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--danger)' }}>SOURCE_DATA_UTC:</span>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {['+00:00', '+02:00', '+03:00', '+05:30', '+08:00'].map(tz => (
+              <button 
+                key={tz}
+                onClick={() => setSourceTimezone(tz)}
+                style={{ 
+                  padding: '0.25rem 0.6rem', 
+                  fontSize: '0.65rem', 
+                  borderRadius: '4px',
+                  background: sourceTimezone === tz ? 'var(--danger)' : 'rgba(255, 255, 255, 0.05)',
+                  color: sourceTimezone === tz ? '#fff' : 'var(--text-muted)',
+                  border: '1px solid ' + (sourceTimezone === tz ? 'var(--danger)' : 'var(--border)'),
+                  cursor: 'pointer'
+                }}
+              >
+                UTC {tz}
+              </button>
+            ))}
+            <select 
+              value={['+00:00', '+02:00', '+03:00', '+05:30', '+08:00'].includes(sourceTimezone) ? '' : sourceTimezone}
+              onChange={(e) => setSourceTimezone(e.target.value)}
+              style={{ 
+                padding: '0.25rem', 
+                fontSize: '0.65rem', 
+                background: 'rgba(255, 255, 255, 0.05)', 
+                color: 'var(--text-muted)', 
+                border: '1px solid var(--border)',
+                borderRadius: '4px'
+              }}
+            >
+              <option value="">Custom...</option>
+              {timezoneOptions.map(opt => (
+                <option key={opt} value={opt} style={{ background: '#1a1a1a' }}>UTC {opt}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         <textarea
           className="input"
