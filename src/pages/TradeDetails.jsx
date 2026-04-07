@@ -142,7 +142,37 @@ export default function TradeDetails() {
         return sign * (h * 60 + (m || 0));
       };
       
-      const tradeLocalTime = new Date(`${trade.date}T${trade.time || '00:00'}:00`);
+      let dateRaw = trade.date || "";
+      let yyyy, mm, dd;
+      
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
+        [yyyy, mm, dd] = dateRaw.split('-');
+      } else if (/^\d{2}-\d{2}-\d{4}$/.test(dateRaw)) {
+        [dd, mm, yyyy] = dateRaw.split('-');
+      } else {
+        const d = new Date(dateRaw);
+        if (!isNaN(d.getTime())) {
+          yyyy = d.getFullYear();
+          mm = String(d.getMonth() + 1).padStart(2, '0');
+          dd = String(d.getDate()).padStart(2, '0');
+        }
+      }
+
+      if (!yyyy || !mm || !dd) {
+        setIsFetchingScreenshot(false);
+        alert("Invalid date or time format. Please edit the trade and ensure date is selected properly.");
+        return;
+      }
+
+      const cleanIsoString = `${yyyy}-${mm}-${dd}T${trade.time || '00:00'}:00`;
+      const tradeLocalTime = new Date(cleanIsoString);
+      
+      if (isNaN(tradeLocalTime.getTime())) {
+        setIsFetchingScreenshot(false);
+        alert("Invalid date or time format. Please edit the trade and ensure date is selected properly.");
+        return;
+      }
+
       const offsetMinutes = parseTimezoneToMinutes(userTimezone);
       const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
       
