@@ -20,6 +20,8 @@ export default function TradeDetails() {
   const [isSaving, setIsSaving] = useState(false);
   const [rank, setRank] = useState(0);
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Trend Following', 'Range', 'Mean Reversion']);
+  const [isFetchingScreenshot, setIsFetchingScreenshot] = useState(false);
+  const [twelveDataKey, setTwelveDataKey] = useState('');
 
   useEffect(() => {
     loadTrade();
@@ -27,6 +29,9 @@ export default function TradeDetails() {
       getUserProfile(currentUser.uid).then(profile => {
         if (profile?.strategies?.length > 0) {
           setStrategies(profile.strategies);
+        }
+        if (profile?.twelveDataKey) {
+          setTwelveDataKey(profile.twelveDataKey);
         }
       });
     }
@@ -92,6 +97,153 @@ export default function TradeDetails() {
         setTrade({ ...trade, image: reader.result }); // Set as Base64 for updateTrade to handle
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const fetchScreenshot = async () => {
+    if (!twelveDataKey) {
+      alert("PLEASE_CONFIGURE_API_KEY: Go to Profile > Visual Intelligence Settings.");
+      return;
+    }
+    
+    setIsFetchingScreenshot(true);
+    try {
+      const lotVal = parseFloat(trade.lots) || 0.01;
+      const entryVal = parseFloat(trade.entry);
+      if (!entryVal) throw new Error("MISSING_ENTRY_PRICE");
+
+      // Twelve Data parameters
+      const symbol = trade.pair.replace('m', '').replace('PRO', '').replace('+', ''); // Normalize symbol
+      const interval = '15min';
+      const tradeDateBase = new Date(`${trade.date}T${trade.time || '00:00'}Z`);
+      
+      const start = new Date(tradeDateBase.getTime() - 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
+      const end = new Date(tradeDateBase.getTime() + 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
+      
+      const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=${interval}&start_date=${start}&end_date=${end}&order=ASC&apikey=${twelveDataKey}`);
+      const data = await response.json();
+      
+      if (data.status === 'error') throw new Error(data.message);
+      if (!data.values || data.values.length === 0) throw new Error("NO_DATA_FOUND_FOR_SESSION_TIME");
+
+      // Generate Canvas Chart
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 600;
+      const ctx = canvas.getContext('2d');
+
+      // Styles
+      const darkBg = '#050a19';
+      const gridColor = '#1a2035';
+      const upColor = '#00f3ff';
+      const downColor = '#ff3366';
+      
+      ctx.fillStyle = darkBg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const margin = { top: 60, right: 80, bottom: 40, left: 20 };
+      const chartW = canvas.width - margin.left - margin.right;
+      const chartH = canvas.height - margin.top - margin.bottom;
+
+      // Scaling
+      const prices = data.values.flatMap(d => [parseFloat(d.high), parseFloat(d.low)]);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      const priceRange = maxPrice - minPrice;
+      const paddingTop = priceRange * 0.2;
+      const paddingBottom = priceRange * 0.2;
+      
+      const getY = (p) => margin.top + chartH - ((p - (minPrice - paddingBottom)) / (priceRange + paddingTop + paddingBottom)) * chartH;
+      const getX = (i) => margin.left + (i / (data.values.length - 1)) * chartW;
+
+      // Draw Grid
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = margin.top + (i / 5) * chartH;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(margin.left + chartW, y);
+        ctx.stroke();
+      }
+
+      // Draw Candles
+      const candleW = (chartW / data.values.length) * 0.7;
+      data.values.forEach((d, i) => {
+        const o = parseFloat(d.open);
+        const h = parseFloat(d.high);
+        const l = parseFloat(d.low);
+        const c = parseFloat(d.close);
+        const x = getX(i);
+        
+        ctx.strokeStyle = c >= o ? upColor : downColor;
+        ctx.fillStyle = c >= o ? upColor : downColor;
+        
+        // Wick
+        ctx.beginPath();
+        ctx.moveTo(x, getY(h));
+        ctx.lineTo(x, getY(l));
+        ctx.stroke();
+        
+        // Body
+        const top = getY(Math.max(o, c));
+        const bottom = getY(Math.min(o, c));
+        ctx.fillRect(x - candleW/2, top, candleW, Math.max(1, bottom-top));
+      });
+
+      // Trade Levels Logic
+      const slPoints = 2 / lotVal;
+      const isLong = (trade.type || 'long').toLowerCase() === 'long';
+      const slPrice = isLong ? (entryVal - slPoints) : (entryVal + slPoints);
+      const tpPrice = isLong ? (entryVal + slPoints * 2) : (entryVal - slPoints * 2);
+
+      // Entry Marker
+      const entryY = getY(entryVal);
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = '#00f3ff';
+      ctx.beginPath();
+      ctx.moveTo(margin.left, entryY);
+      ctx.lineTo(margin.left + chartW, entryY);
+      ctx.stroke();
+      
+      // SL marker
+      const slY = getY(slPrice);
+      ctx.strokeStyle = '#ff3366';
+      ctx.beginPath();
+      ctx.moveTo(margin.left, slY);
+      ctx.lineTo(margin.left + chartW, slY);
+      ctx.stroke();
+
+      // TP marker
+      const tpY = getY(tpPrice);
+      ctx.strokeStyle = '#00ff66';
+      ctx.beginPath();
+      ctx.moveTo(margin.left, tpY);
+      ctx.lineTo(margin.left + chartW, tpY);
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      
+      // Legend
+      ctx.font = 'bold 12px monospace';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(`${trade.pair.toUpperCase()} | ENTRY: ${entryVal} | LOTS: ${lotVal}`, margin.left, 30);
+      
+      ctx.fillStyle = '#00f3ff'; ctx.fillText(`ENTRY: ${entryVal}`, margin.left + chartW + 5, entryY + 4);
+      ctx.fillStyle = '#ff3366'; ctx.fillText(`SL: ${slPrice.toFixed(2)}`, margin.left + chartW + 5, slY + 4);
+      ctx.fillStyle = '#00ff66'; ctx.fillText(`TP: ${tpPrice.toFixed(2)}`, margin.left + chartW + 5, tpY + 4);
+
+      const screenshot = canvas.toDataURL('image/png');
+      const updatedTrade = { ...trade, image: screenshot };
+      await updateTrade(id, updatedTrade);
+      setTrade(updatedTrade);
+      alert("CHART_GENERATED: Tactical evidence stored in database.");
+      
+    } catch (err) {
+      console.error(err);
+      alert(`FETCH_FAILED: ${err.message}`);
+    } finally {
+      setIsFetchingScreenshot(false);
     }
   };
 
@@ -267,10 +419,22 @@ export default function TradeDetails() {
             background: 'rgba(255,255,255,0.01)', 
             border: '1px dashed var(--border)',
             borderRadius: 'var(--radius-md)',
-            color: 'var(--text-muted)'
+            color: 'var(--text-muted)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1.5rem'
           }}>
-            <ImageIcon size={48} style={{ opacity: 0.1, marginBottom: '1rem' }} />
+            <ImageIcon size={48} style={{ opacity: 0.1 }} />
             <div style={{ fontSize: '0.8rem' }}>NO_VISUAL_EVIDENCE_LOGGED</div>
+            <button 
+              onClick={fetchScreenshot} 
+              disabled={isFetchingScreenshot}
+              className="btn-primary" 
+              style={{ padding: '0.75rem 2rem', background: 'var(--primary)', color: '#000', fontSize: '0.8rem', fontWeight: 800 }}
+            >
+              {isFetchingScreenshot ? 'FETCHING_CANDLES...' : 'FETCH_SCREENSHOT'}
+            </button>
           </div>
         )}
       </div>

@@ -29,6 +29,7 @@ export default function Profile() {
   const [hostedJournalCode, setHostedJournalCode] = useState('');
   const [timezone, setTimezone] = useState('+00:00');
   const [sourceTimezone, setSourceTimezone] = useState('+00:00');
+  const [twelveDataKey, setTwelveDataKey] = useState('');
 
   useEffect(() => {
     if (fontSize) {
@@ -62,6 +63,7 @@ export default function Profile() {
       setDisplayName(profile.displayName || currentUser.displayName || '');
       setPhotoURL(profile.photoURL || currentUser.photoURL || '');
       if (profile.timezone) setTimezone(profile.timezone);
+      if (profile.twelveDataKey) setTwelveDataKey(profile.twelveDataKey);
     } else {
       setActiveJournalId(currentUser.uid);
       setDisplayName(currentUser.displayName || '');
@@ -647,6 +649,27 @@ export default function Profile() {
           </select>
           <p style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
             All migrated trades will be adjusted to this timezone for consistent logging.
+          </p>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2.5rem', borderLeft: '3px solid var(--secondary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+            <Zap size={18} className="text-secondary" />
+            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Visual Intelligence API (Twelve Data)</span>
+          </div>
+          <input 
+            type="password" 
+            className="input" 
+            placeholder="ENTER_API_KEY_FOR_CHARTS" 
+            value={twelveDataKey}
+            onChange={async (e) => {
+              setTwelveDataKey(e.target.value);
+              await updateUserProfile(currentUser.uid, { twelveDataKey: e.target.value });
+            }}
+            style={{ width: '100%', padding: '0.75rem' }}
+          />
+          <p style={{ marginTop: '0.75rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+            Required for the "Fetch Screenshot" feature. Get your key at <a href="https://twelvedata.com" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>twelvedata.com</a>.
           </p>
         </div>
       </div>
