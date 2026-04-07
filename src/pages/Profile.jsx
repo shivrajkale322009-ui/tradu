@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { getUserProfile, updateUserProfile, saveTrade, createSharedJournal, joinSharedJournal, leaveSharedJournal, recoverySweep } from '../utils/db';
-import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database, Users, Share2, Activity, Link as LinkIcon, Copy } from 'lucide-react';
+import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database, Users, Share2, Activity, Link as LinkIcon, Copy, Clock } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export default function Profile() {
