@@ -123,45 +123,88 @@ export default function TradeDetails() {
         else if (symbol.length === 6) symbol = `${symbol.slice(0,3)}/${symbol.slice(3)}`;
       }
       
-      const interval = '15min';
-      
-      // Calculate UTC time based on stored local time and user's timezone
-      const parseTimezoneToMinutes = (offset) => {
-        if (!offset) return 0;
-        const sign = offset.startsWith('-') ? -1 : 1;
-        const [h, m] = offset.replace(/[+-]/, '').split(':').map(Number);
-        return sign * (h * 60 + (m || 0));
-      };
+      // Determine Alpha Vantage URL for 1min and 15min
+      let url1min = '';
+      let url15min = '';
+      if (symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('SOL') || symbol.includes('USDT')) {
+        let coin = symbol.replace('USDT', '').replace('USD', '').replace('/', '');
+        url1min = `https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=${coin}&market=USD&interval=1min&outputsize=full&apikey=${twelveDataKey}`;
+        url15min = `https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=${coin}&market=USD&interval=15min&outputsize=full&apikey=${twelveDataKey}`;
+      } else {
+        url1min = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=1min&outputsize=full&apikey=${twelveDataKey}`;
+        url15min = `https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=${symbol}&interval=15min&outputsize=full&apikey=${twelveDataKey}`;
+      }
       
       const tradeLocalTime = new Date(`${trade.date}T${trade.time || '00:00'}:00`);
       const offsetMinutes = parseTimezoneToMinutes(userTimezone);
       const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
+      const targetTime = tradeUtcTime.getTime();
 
       // Auto-fetch entry price if missing
       if (!entryVal || isNaN(entryVal)) {
-        const start1m = new Date(tradeUtcTime.getTime() - 60000).toISOString().replace('T', ' ').slice(0, 19);
-        const end1m = new Date(tradeUtcTime.getTime() + 60000).toISOString().replace('T', ' ').slice(0, 19);
-        const res1m = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1min&start_date=${start1m}&end_date=${end1m}&order=ASC&apikey=${twelveDataKey}`);
+        const res1m = await fetch(url1min);
         const data1m = await res1m.json();
-        
-        if (data1m.status === 'error' || !data1m.values || data1m.values.length === 0) {
+
+        if (data1m['Error Message'] || data1m['Information']?.includes('rate limit')) {
+          throw new Error(data1m['Error Message'] || "API Rate Limit Exceeded");
+        }
+
+        const timeSeriesKey = Object.keys(data1m).find(k => k.includes('Time Series'));
+        if (timeSeriesKey && data1m[timeSeriesKey]) {
+          const timeSeries = data1m[timeSeriesKey];
+          let closestDiff = Infinity;
+          for (const [timestampStr, candle] of Object.entries(timeSeries)) {
+            const ds = new Date(timestampStr.replace(' ', 'T') + 'Z').getTime();
+            const diff = Math.abs(ds - targetTime);
+            if (diff < closestDiff) {
+              closestDiff = diff;
+              entryVal = parseFloat(candle['1. open']);
+            }
+          }
+          if (closestDiff > 24 * 60 * 60 * 1000) throw new Error("PUNCTUAL_CANDLE_NOT_FOUND");
+          trade.entry = entryVal.toString();
+        } else {
           throw new Error("ENTRY_PRICE_MISSING_AND_API_UNAVAILABLE");
         }
-        
-        entryVal = parseFloat(data1m.values[0].open);
-        // Silently update state so UI reflects it
-        trade.entry = entryVal.toString();
       }
       
-      // We request candles ± 10 hours (40 candles of 15m) around the entry UTC time
-      const start = new Date(tradeUtcTime.getTime() - 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
-      const end = new Date(tradeUtcTime.getTime() + 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
+      // Fetch 15-minute chart
+      const response = await fetch(url15min);
+      const dataInfo = await response.json();
       
-      const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=${interval}&start_date=${start}&end_date=${end}&order=ASC&apikey=${twelveDataKey}`);
-      const data = await response.json();
+      if (dataInfo['Error Message'] || dataInfo['Information']?.includes('rate limit')) {
+        throw new Error(dataInfo['Error Message'] || "API Rate Limit Exceeded");
+      }
+
+      const tsKey = Object.keys(dataInfo).find(k => k.includes('Time Series'));
+      if (!tsKey || !dataInfo[tsKey]) throw new Error("NO_DATA_FOUND_FOR_SESSION_TIME");
+
+      const entries = Object.entries(dataInfo[tsKey]).sort((a, b) => a[0].localeCompare(b[0]));
       
-      if (data.status === 'error') throw new Error(data.message);
-      if (!data.values || data.values.length === 0) throw new Error("NO_DATA_FOUND_FOR_SESSION_TIME");
+      // Find center index
+      let centerIndex = -1;
+      let minDiff = Infinity;
+      for (let i = 0; i < entries.length; i++) {
+        const ds = new Date(entries[i][0].replace(' ', 'T') + 'Z').getTime();
+        const diff = Math.abs(ds - targetTime);
+        if (diff < minDiff) {
+          minDiff = diff;
+          centerIndex = i;
+        }
+      }
+
+      if (centerIndex === -1 || minDiff > 24 * 60 * 60 * 1000) throw new Error("CHART_DATA_FOR_THIS_DAY_NOT_AVAILABLE");
+      
+      const startIndex = Math.max(0, centerIndex - 40);
+      const endIndex = Math.min(entries.length, centerIndex + 40);
+      const slicedEntries = entries.slice(startIndex, endIndex);
+
+      const finalValues = slicedEntries.map(e => ({
+        open: e[1]['1. open'],
+        high: e[1]['2. high'],
+        low: e[1]['3. low'],
+        close: e[1]['4. close']
+      }));
 
       // Generate Canvas Chart
       const canvas = document.createElement('canvas');
@@ -183,7 +226,7 @@ export default function TradeDetails() {
       const chartH = canvas.height - margin.top - margin.bottom;
 
       // Scaling
-      const prices = data.values.flatMap(d => [parseFloat(d.high), parseFloat(d.low)]);
+      const prices = finalValues.flatMap(d => [parseFloat(d.high), parseFloat(d.low)]);
       const minPrice = Math.min(...prices);
       const maxPrice = Math.max(...prices);
       const priceRange = maxPrice - minPrice;
@@ -191,7 +234,7 @@ export default function TradeDetails() {
       const paddingBottom = priceRange * 0.2;
       
       const getY = (p) => margin.top + chartH - ((p - (minPrice - paddingBottom)) / (priceRange + paddingTop + paddingBottom)) * chartH;
-      const getX = (i) => margin.left + (i / (data.values.length - 1)) * chartW;
+      const getX = (i) => margin.left + (i / (finalValues.length - 1)) * chartW;
 
       // Draw Grid
       ctx.strokeStyle = gridColor;
@@ -205,8 +248,8 @@ export default function TradeDetails() {
       }
 
       // Draw Candles
-      const candleW = (chartW / data.values.length) * 0.7;
-      data.values.forEach((d, i) => {
+      const candleW = (chartW / finalValues.length) * 0.7;
+      finalValues.forEach((d, i) => {
         const o = parseFloat(d.open);
         const h = parseFloat(d.high);
         const l = parseFloat(d.low);
