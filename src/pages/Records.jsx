@@ -237,6 +237,7 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
         <th>Asset Pair</th>
         <th>Type</th>
         <th>Strategy</th>
+        <th style={{ textAlign: 'center' }}>Grade</th>
         <th style={{ textAlign: 'right' }}>P&L Performance</th>
         <th style={{ textAlign: 'center' }}>Action</th>
       </tr>
@@ -285,6 +286,20 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
               </span>
             </td>
             <td style={{ fontSize: '0.85rem' }}>{trade.strategy || 'NO_STRATEGY'}</td>
+            <td style={{ textAlign: 'center' }}>
+              <span style={{ 
+                padding: '0.2rem 0.6rem', 
+                borderRadius: '4px', 
+                fontSize: '0.7rem', 
+                fontWeight: 900, 
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: 'var(--primary)',
+                textTransform: 'uppercase'
+              }}>
+                {trade.quality || 'B'}
+              </span>
+            </td>
             <td style={{ textAlign: 'right' }}>
               <div className={Math.abs(Number(trade.pnl)) < 0.5 ? 'glow-text-warning' : (Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger')} style={{ fontSize: (isExpanded || isWide) ? '1.2rem' : '1rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                 <div>{Number(trade.pnl) >= 0 ? '▲' : '▼'} {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}</div>

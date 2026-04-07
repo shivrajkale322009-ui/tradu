@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { 
   TrendingUp, TrendingDown, Target, Zap, Clock, Brain, Wallet,
   BarChart3, PieChart as PieIcon, Activity, Flame, AlertTriangle, Info,
-  Grid, Calendar, ChevronLeft, ChevronRight, Layers, Layout
+  Grid, Calendar, ChevronLeft, ChevronRight, Layers, Layout, ShieldCheck
 } from 'lucide-react';
 
 const COLORS = ['#00f3ff', '#ff3366', '#00ff66', '#8b5cf6', '#f59e0b'];
@@ -97,6 +97,17 @@ export default function Analytics() {
     });
     const emotionalData = Object.values(emotionMap);
 
+    // Setup Quality (SQUALITY) Analysis
+    const qualityMap = {};
+    trades.forEach(t => {
+      const q = (t.quality || 'b').toUpperCase();
+      if (!qualityMap[q]) qualityMap[q] = { name: q, pnl: 0, count: 0, wins: 0 };
+      qualityMap[q].pnl += Number(t.pnl);
+      qualityMap[q].count += 1;
+      if (Number(t.pnl) > 0) qualityMap[q].wins += 1;
+    });
+    const qualityPerformance = Object.values(qualityMap).sort((a, b) => a.name.localeCompare(b.name));
+
     // Streaks
     let maxWinStreak = 0;
     let maxLossStreak = 0;
@@ -146,6 +157,7 @@ export default function Analytics() {
       maxDrawdown: Number(maxDrawdown) || 0,
       bestTrade: sortedByPnl[0],
       worstTrade: sortedByPnl[sortedByPnl.length - 1],
+      qualityPerformance,
       winLossPie: [
         { name: 'Wins', value: wins.length },
         { name: 'Losses', value: losses.length },
@@ -447,12 +459,51 @@ export default function Analytics() {
             </div>
           </div>
 
+          <div className="glass-panel" style={{ padding: '1rem' }}>
+            <h3 style={{ fontSize: '0.8rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <ShieldCheck size={14} className="text-success" /> SQUALITY_GRADES
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {analyticsData.qualityPerformance.map(q => (
+                <div key={q.name} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ 
+                    width: '32px', height: '32px', borderRadius: '4px', 
+                    background: q.pnl >= 0 ? 'rgba(0, 255, 102, 0.1)' : 'rgba(255, 51, 102, 0.1)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '0.9rem', fontWeight: 900, color: q.pnl >= 0 ? 'var(--success)' : 'var(--danger)',
+                    border: `1px solid ${q.pnl >= 0 ? 'rgba(0, 255, 102, 0.2)' : 'rgba(255, 51, 102, 0.2)'}`
+                  }}>
+                    {q.name}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '0.2rem' }}>
+                      <span className="text-muted">{q.count} Trades ({((q.wins/q.count)*100).toFixed(0)}% WR)</span>
+                      <span className={q.pnl >= 0 ? 'text-success' : 'text-danger'} style={{ fontWeight: 600 }}>
+                        {q.pnl >= 0 ? '+' : ''}${q.pnl.toFixed(0)}
+                      </span>
+                    </div>
+                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '1.5px', overflow: 'hidden' }}>
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(q.count / analyticsData.totalTrades) * 100}%` }}
+                        style={{ height: '100%', background: q.pnl >= 0 ? 'var(--success)' : 'var(--danger)', opacity: 0.6 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(0, 240, 255, 0.03)', border: '1px solid rgba(0, 240, 255, 0.1)' }}>
             <h3 style={{ fontSize: '0.8rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Brain size={14} className="text-primary" /> AI_INSIGHT
             </h3>
             <p style={{ fontSize: '0.7rem', lineHeight: '1.4', color: 'var(--text-muted)' }}>
-              {analyticsData.maxWinStreak > 3 ? "SYSTEM: Consecutive wins detected. Recommended: Tighten risk protocol to protect gains." : "HUD: Psychology levels within stable range."}
+              {analyticsData.qualityPerformance.find(q => q.name === 'A1' || q.name === 'A')?.pnl < 0 ? 
+                "CRITICAL: Performance on 'A' grade setups is negative. Review entry criteria immediately." :
+                analyticsData.maxWinStreak > 3 ? "SYSTEM: Consecutive wins detected. Recommended: Tighten risk protocol to protect gains." : 
+                "HUD: Psychology levels within stable range."}
             </p>
           </div>
         </div>

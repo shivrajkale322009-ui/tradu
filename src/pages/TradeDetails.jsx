@@ -404,6 +404,9 @@ export default function TradeDetails() {
                   <span className="badge" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)' }}>
                     LOTS: {trade.lots || '0.01'}
                   </span>
+                  <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.1)', color: 'var(--primary)', fontWeight: 800 }}>
+                    GRADE: {(trade.quality || 'B').toUpperCase()}
+                  </span>
                 </>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', width: '100%' }}>
@@ -435,6 +438,15 @@ export default function TradeDetails() {
                   <div>
                     <label style={{ fontSize: '0.6rem' }}>Position Size (Lots)</label>
                     <input type="number" step="0.01" className="input" value={trade.lots} onChange={e => setTrade({...trade, lots: e.target.value})} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.6rem' }}>Setup Grade (SQUALITY)</label>
+                    <select className="input" value={trade.quality} onChange={e => setTrade({...trade, quality: e.target.value})}>
+                      <option value="a1">A1</option>
+                      <option value="b">B</option>
+                      <option value="c">C</option>
+                      <option value="d">D</option>
+                    </select>
                   </div>
                 </div>
               )}
