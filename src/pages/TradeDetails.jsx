@@ -22,6 +22,7 @@ export default function TradeDetails() {
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Trend Following', 'Range', 'Mean Reversion']);
   const [isFetchingScreenshot, setIsFetchingScreenshot] = useState(false);
   const [twelveDataKey, setTwelveDataKey] = useState('');
+  const [userTimezone, setUserTimezone] = useState('+00:00');
 
   useEffect(() => {
     loadTrade();
@@ -32,6 +33,9 @@ export default function TradeDetails() {
         }
         if (profile?.twelveDataKey) {
           setTwelveDataKey(profile.twelveDataKey);
+        }
+        if (profile?.timezone) {
+          setUserTimezone(profile.timezone);
         }
       });
     }
@@ -112,13 +116,32 @@ export default function TradeDetails() {
       const entryVal = parseFloat(trade.entry);
       if (!entryVal) throw new Error("MISSING_ENTRY_PRICE");
 
-      // Twelve Data parameters
-      const symbol = trade.pair.replace('m', '').replace('PRO', '').replace('+', ''); // Normalize symbol
-      const interval = '15min';
-      const tradeDateBase = new Date(`${trade.date}T${trade.time || '00:00'}Z`);
+      // Normalize symbol for Twelve Data
+      let symbol = trade.pair.replace('m', '').replace('PRO', '').replace('+', '').toUpperCase();
+      if (!symbol.includes('/')) {
+        if (symbol.endsWith('USD')) symbol = symbol.replace('USD', '/USD');
+        else if (symbol.endsWith('USDT')) symbol = symbol.replace('USDT', '/USDT');
+        else if (symbol.length === 6) symbol = `${symbol.slice(0,3)}/${symbol.slice(3)}`;
+      }
       
-      const start = new Date(tradeDateBase.getTime() - 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
-      const end = new Date(tradeDateBase.getTime() + 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
+      const interval = '15min';
+      
+      // Calculate UTC time based on stored local time and user's timezone
+      const parseTimezoneToMinutes = (offset) => {
+        if (!offset) return 0;
+        const sign = offset.startsWith('-') ? -1 : 1;
+        const [h, m] = offset.replace(/[+-]/, '').split(':').map(Number);
+        return sign * (h * 60 + (m || 0));
+      };
+      
+      const tradeLocalTime = new Date(`${trade.date}T${trade.time || '00:00'}:00`);
+      const offsetMinutes = parseTimezoneToMinutes(userTimezone);
+      // tradeLocalTime is now treated as local. Convert to UTC:
+      const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
+      
+      // We request candles ± 10 hours (40 candles of 15m) around the entry UTC time
+      const start = new Date(tradeUtcTime.getTime() - 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
+      const end = new Date(tradeUtcTime.getTime() + 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
       
       const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=${interval}&start_date=${start}&end_date=${end}&order=ASC&apikey=${twelveDataKey}`);
       const data = await response.json();
