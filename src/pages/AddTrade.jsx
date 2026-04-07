@@ -241,7 +241,6 @@ export default function AddTrade() {
   const [syncStatus, setSyncStatus] = useState('syncing');
   const [twelveDataKey, setTwelveDataKey] = useState('');
   const [userTimezone, setUserTimezone] = useState('+00:00');
-  const [isFetchingPrice, setIsFetchingPrice] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -389,58 +388,6 @@ export default function AddTrade() {
       alert('Could not save trade: ' + error.message);
     }
   };
-  const handleFetchPrice = async () => {
-    if (!twelveDataKey) {
-      alert("PLEASE_CONFIGURE_API_KEY: Go to Profile > Visual Intelligence Settings to auto-fetch prices.");
-      return;
-    }
-    if (!formData.pair || !formData.date || !formData.time) {
-      alert("Please ensure Pair, Date, and Time are filled before fetching price.");
-      return;
-    }
-
-    setIsFetchingPrice(true);
-    try {
-      // Normalize symbol for Twelve Data
-      let symbol = formData.pair.replace('m', '').replace('PRO', '').replace('+', '').toUpperCase();
-      if (!symbol.includes('/')) {
-        if (symbol.endsWith('USD')) symbol = symbol.replace('USD', '/USD');
-        else if (symbol.endsWith('USDT')) symbol = symbol.replace('USDT', '/USDT');
-        else if (symbol.length === 6) symbol = `${symbol.slice(0,3)}/${symbol.slice(3)}`;
-      }
-
-      const parseTimezoneToMinutes = (offset) => {
-        if (!offset) return 0;
-        const sign = offset.startsWith('-') ? -1 : 1;
-        const [h, m] = offset.replace(/[+-]/, '').split(':').map(Number);
-        return sign * (h * 60 + (m || 0));
-      };
-
-      const tradeLocalTime = new Date(`${formData.date}T${formData.time}:00`);
-      const offsetMinutes = parseTimezoneToMinutes(userTimezone);
-      const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
-
-      // Fetch 1min candle exactly at the trade time
-      const start = new Date(tradeUtcTime.getTime() - 60000).toISOString().replace('T', ' ').slice(0, 19);
-      const end = new Date(tradeUtcTime.getTime() + 60000).toISOString().replace('T', ' ').slice(0, 19);
-      
-      const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1min&start_date=${start}&end_date=${end}&order=ASC&apikey=${twelveDataKey}`);
-      const data = await response.json();
-      
-      if (data.status === 'error') throw new Error(data.message);
-      if (!data.values || data.values.length === 0) throw new Error("NO_DATA_FOUND_FOR_SESSION_TIME");
-
-      // Use the open price of the exact candle
-      const price = parseFloat(data.values[0].open);
-      setFormData(prev => ({ ...prev, entry: price.toString() }));
-      
-    } catch (err) {
-      console.error("Auto fetch price failed:", err);
-      alert(`FETCH_FAILED: ${err.message}. Please enter price manually.`);
-    } finally {
-      setIsFetchingPrice(false);
-    }
-  };
 
   return (
     <div className="page-container">
@@ -501,18 +448,7 @@ export default function AddTrade() {
             </select>
           </div>
           <div className="form-group flex-1">
-            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              Entry Price
-              <button 
-                type="button" 
-                onClick={handleFetchPrice} 
-                disabled={isFetchingPrice}
-                className="badge bg-primary text-black" 
-                style={{ cursor: 'pointer', border: 'none', background: 'var(--primary)', color: '#000', fontSize: '0.6rem', padding: '0.2rem 0.5rem' }}
-              >
-                {isFetchingPrice ? 'FETCHING...' : 'AUTO FETCH'}
-              </button>
-            </label>
+            <label>Entry Price</label>
             <input
               type="number"
               step="any"

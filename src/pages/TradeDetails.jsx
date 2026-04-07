@@ -137,20 +137,9 @@ export default function TradeDetails() {
       const offsetMinutes = parseTimezoneToMinutes(userTimezone);
       const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
 
-      // Auto-fetch entry price if missing
+      // Require manual entry price
       if (!entryVal || isNaN(entryVal)) {
-        const start1m = new Date(tradeUtcTime.getTime() - 60000).toISOString().replace('T', ' ').slice(0, 19);
-        const end1m = new Date(tradeUtcTime.getTime() + 60000).toISOString().replace('T', ' ').slice(0, 19);
-        const res1m = await fetch(`https://api.twelvedata.com/time_series?symbol=${symbol}&interval=1min&start_date=${start1m}&end_date=${end1m}&order=ASC&apikey=${twelveDataKey}`);
-        const data1m = await res1m.json();
-        
-        if (data1m.status === 'error' || !data1m.values || data1m.values.length === 0) {
-          throw new Error("ENTRY_PRICE_MISSING_AND_API_UNAVAILABLE");
-        }
-        
-        entryVal = parseFloat(data1m.values[0].open);
-        // Silently update state so UI reflects it
-        trade.entry = entryVal.toString();
+        throw new Error("Please enter entry price manually");
       }
       
       // We request candles ± 10 hours (40 candles of 15m) around the entry UTC time
