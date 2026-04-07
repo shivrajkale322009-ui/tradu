@@ -67,7 +67,7 @@ export default function Analytics() {
     // Dynamic Win Rate (Exclude C2C from base if you want, or include in total)
     // User requested "new category", common standard is wins / (total - c2c) or just wins/total.
     // We'll use (wins / totalMatches) but reflect the C2C in the profile.
-    const winRate = (wins.length / (trades.length || 1)) * 100;
+    const winRate = (wins.length / ((wins.length + losses.length) || 1)) * 100;
     
     // Profit Curve
     let rollingPnl = 0;

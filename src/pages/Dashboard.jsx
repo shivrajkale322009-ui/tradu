@@ -171,9 +171,9 @@ export default function Dashboard() {
     const today = new Date().toISOString().slice(0, 10);
     const todayTrades = filteredTrades.filter(t => t.date === today);
     const todayPnl = todayTrades.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
-    const wins = filteredTrades.filter(t => (Number(t.pnl) || 0) > 0);
-    const losses = filteredTrades.filter(t => (Number(t.pnl) || 0) < 0);
-    const winRate = Math.round((wins.length / (filteredTrades.length || 1)) * 100);
+    const wins = filteredTrades.filter(t => (Number(t.pnl) || 0) >= 0.5);
+    const losses = filteredTrades.filter(t => (Number(t.pnl) || 0) <= -0.5);
+    const winRate = Math.round((wins.length / ((wins.length + losses.length) || 1)) * 100);
     const totalPnl = filteredTrades.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
     const pnlPoints = filteredTrades.slice(0, 7).reverse().map(t => ({ v: Number(t.pnl) || 0 }));
     
