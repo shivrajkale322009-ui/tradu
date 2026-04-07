@@ -10,6 +10,15 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const formatDate = (rawDate) => {
+  if (!rawDate) return "";
+  if (/^\d{2}-\d{2}-\d{4}$/.test(rawDate)) {
+    const [day, month, year] = rawDate.split("-");
+    return `${year}-${month}-${day}`;
+  }
+  return rawDate;
+};
+
 export default function TradeDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -50,15 +59,23 @@ export default function TradeDetails() {
       navigate('/');
       return;
     }
-    setTrade(data);
+
+    const formattedData = {
+      ...data,
+      date: formatDate(data.date),
+      time: data.time || "00:00"
+    };
+
+    setTrade(formattedData);
 
     // DYNAMIC CHRONO-INDEXING (v4.5)
-    // The session ID is calculated as the rank in the master chronological journal
     const journalID = data.journalId || data.userId;
     const allTrades = await getTrades(journalID);
     const sorted = [...allTrades].sort((a,b) => {
-        const tA = new Date(`${a.date}T${a.time || '00:00'}Z`).getTime();
-        const tB = new Date(`${b.date}T${b.time || '00:00'}Z`).getTime();
+        const dateA = formatDate(a.date);
+        const dateB = formatDate(b.date);
+        const tA = new Date(`${dateA}T${a.time || '00:00'}Z`).getTime();
+        const tB = new Date(`${dateB}T${b.time || '00:00'}Z`).getTime();
         return tA - tB;
     });
     const index = sorted.findIndex(t => t.id === id);
@@ -142,25 +159,25 @@ export default function TradeDetails() {
         return sign * (h * 60 + (m || 0));
       };
       
-      // ✅ Step 1: convert FIRST
-      const rawDate = trade.date || ""; // "DD-MM-YYYY" or "YYYY-MM-DD"
+      // ✅ Step 1: Use strictly formatted date from state
+      const rawDate = trade.date; 
       const rawTime = trade.time || "00:00";
-      let formattedDate = rawDate;
+      
+      // ✅ Step 2: Combine
+      const datetime = `${rawDate}T${rawTime}:00`;
+      
+      // 📝 Debug logs for verification
+      console.log("Formatted Date:", rawDate);
+      console.log("Datetime:", datetime);
 
-      if (/^\d{2}-\d{2}-\d{4}$/.test(rawDate)) {
-        const [day, month, year] = rawDate.split("-");
-        formattedDate = `${year}-${month}-${day}`;
-      }
-
-      // ✅ Step 2: combine
-      const datetime = `${formattedDate}T${rawTime}:00`;
-
-      // ✅ Step 3: validate AFTER
+      // ✅ Step 3: Validate AFTER
       const tradeLocalTime = new Date(datetime);
 
       if (isNaN(tradeLocalTime.getTime())) {
+        console.error("Critical Date Error:", datetime);
         setIsFetchingScreenshot(false);
-        alert("Invalid date or time format. Please edit the trade and ensure date is selected properly.");
+        alert("Invalid date or time format. System forced reload of trade data.");
+        loadTrade();
         return;
       }
 
