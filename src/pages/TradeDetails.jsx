@@ -173,7 +173,7 @@ export default function TradeDetails() {
                   </span>
                   <span className="badge bg-muted">
                     <Calendar size={14} />
-                    {new Date(`${trade.date}T${trade.time || '00:00'}Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {new Date(`${trade.date}T${trade.time || '00:00'}Z`).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
                   </span>
                   <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', color: 'var(--primary)' }}>
                     {trade.strategy?.toUpperCase() || 'NO_STRATEGY'}
@@ -200,6 +200,10 @@ export default function TradeDetails() {
                   <div>
                     <label style={{ fontSize: '0.6rem' }}>Session Date</label>
                     <input type="date" className="input" value={trade.date} onChange={e => setTrade({...trade, date: e.target.value})} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.6rem' }}>Session Time</label>
+                    <input type="time" className="input" value={trade.time} onChange={e => setTrade({...trade, time: e.target.value})} />
                   </div>
                   <div>
                     <label style={{ fontSize: '0.6rem' }}>Position Size (Lots)</label>
