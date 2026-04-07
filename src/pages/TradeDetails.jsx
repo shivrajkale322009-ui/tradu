@@ -23,6 +23,8 @@ export default function TradeDetails() {
   const [isFetchingScreenshot, setIsFetchingScreenshot] = useState(false);
   const [twelveDataKey, setTwelveDataKey] = useState('');
   const [userTimezone, setUserTimezone] = useState('+00:00');
+  const [showEntryModal, setShowEntryModal] = useState(false);
+  const [pendingEntryPrice, setPendingEntryPrice] = useState('');
 
   useEffect(() => {
     loadTrade();
@@ -104,7 +106,7 @@ export default function TradeDetails() {
     }
   };
 
-  const fetchScreenshot = async () => {
+  const fetchScreenshot = async (providedEntry) => {
     if (!twelveDataKey) {
       alert("PLEASE_CONFIGURE_API_KEY: Go to Profile > Visual Intelligence Settings.");
       return;
@@ -113,7 +115,14 @@ export default function TradeDetails() {
     setIsFetchingScreenshot(true);
     try {
       const lotVal = parseFloat(trade.lots) || 0.01;
-      let entryVal = parseFloat(trade.entry);
+      let entryVal = providedEntry !== undefined ? parseFloat(providedEntry) : parseFloat(trade.entry);
+
+      // Require manual entry price
+      if (!entryVal || isNaN(entryVal)) {
+        setIsFetchingScreenshot(false);
+        setShowEntryModal(true);
+        return;
+      }
 
       // Normalize symbol for Twelve Data
       let symbol = trade.pair.replace('m', '').replace('PRO', '').replace('+', '').toUpperCase();
@@ -136,11 +145,6 @@ export default function TradeDetails() {
       const tradeLocalTime = new Date(`${trade.date}T${trade.time || '00:00'}:00`);
       const offsetMinutes = parseTimezoneToMinutes(userTimezone);
       const tradeUtcTime = new Date(tradeLocalTime.getTime() - offsetMinutes * 60000);
-
-      // Require manual entry price
-      if (!entryVal || isNaN(entryVal)) {
-        throw new Error("Please enter entry price manually");
-      }
       
       // We request candles ± 10 hours (40 candles of 15m) around the entry UTC time
       const start = new Date(tradeUtcTime.getTime() - 40 * 15 * 60000).toISOString().replace('T', ' ').slice(0, 19);
@@ -499,6 +503,96 @@ export default function TradeDetails() {
           </div>
         )}
       </div>
+      
+      {/* Entry Price Modal */}
+      <AnimatePresence>
+        {showEntryModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(5, 10, 25, 0.85)', backdropFilter: 'blur(10px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+              padding: '1rem'
+            }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="glass-panel"
+              style={{ width: '100%', maxWidth: '400px', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid var(--primary)' }}
+            >
+              <div>
+                <h3 style={{ margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)' }}>
+                  <Crosshair size={20} /> Entry Price Required
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>
+                  Please provide the exact entry price for this session to generate tactical visual evidence.
+                </p>
+              </div>
+              
+              <div>
+                <label style={{ fontSize: '0.75rem', marginBottom: '0.5rem', display: 'block', color: 'var(--text-primary)' }}>Enter Entry Price</label>
+                <input 
+                  type="number" 
+                  step="any"
+                  autoFocus
+                  className="input" 
+                  placeholder="e.g. 68450.00" 
+                  value={pendingEntryPrice}
+                  onChange={e => setPendingEntryPrice(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      const val = parseFloat(pendingEntryPrice);
+                      if (!val || isNaN(val)) {
+                        alert("Entry price must be numeric.");
+                        return;
+                      }
+                      setShowEntryModal(false);
+                      const updatedTrade = { ...trade, entry: val.toString() };
+                      setTrade(updatedTrade);
+                      updateTrade(id, updatedTrade);
+                      fetchScreenshot(val.toString());
+                    }
+                  }}
+                  style={{ width: '100%', padding: '1rem', fontSize: '1.2rem', textAlign: 'center', fontFamily: 'monospace' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button 
+                  onClick={() => setShowEntryModal(false)}
+                  className="btn-outline" 
+                  style={{ flex: 1, padding: '0.75rem' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={() => {
+                    const val = parseFloat(pendingEntryPrice);
+                    if (!val || isNaN(val)) {
+                      alert("Entry price must be numeric and not empty.");
+                      return;
+                    }
+                    setShowEntryModal(false);
+                    const updatedTrade = { ...trade, entry: val.toString() };
+                    setTrade(updatedTrade);
+                    updateTrade(id, updatedTrade);
+                    fetchScreenshot(val.toString());
+                  }}
+                  className="btn-primary" 
+                  style={{ flex: 1, padding: '0.75rem' }}
+                >
+                  Generate
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
