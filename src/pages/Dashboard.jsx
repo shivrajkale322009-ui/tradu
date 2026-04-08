@@ -145,16 +145,27 @@ export default function Dashboard() {
     else document.body.style.overflow = 'auto';
   }, [isExpanded]);
 
-  const filteredTrades = useMemo(() => {
-    if (timeFilter === 'ALL') return trades;
-    const now = new Date();
-    return trades.filter(t => {
-      const d = new Date(t.date);
-      if (timeFilter === 'MONTH') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      if (timeFilter === 'WEEK') return (now - d) / (1000 * 60 * 60 * 24) <= 7;
-      return true;
+  const sortedTrades = useMemo(() => {
+    return [...trades].sort((a, b) => {
+      const timeA = new Date(`${a.date}T${a.time}Z`).getTime();
+      const timeB = new Date(`${b.date}T${b.time}Z`).getTime();
+      return timeB - timeA; // Descending (newest first)
     });
-  }, [trades, timeFilter]);
+  }, [trades]);
+
+  const filteredTrades = useMemo(() => {
+    let source = sortedTrades;
+    if (timeFilter !== 'ALL') {
+      const now = new Date();
+      source = source.filter(t => {
+        const d = new Date(t.date);
+        if (timeFilter === 'MONTH') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        if (timeFilter === 'WEEK') return (now - d) / (1000 * 60 * 60 * 24) <= 7;
+        return true;
+      });
+    }
+    return source;
+  }, [sortedTrades, timeFilter]);
 
   const masterChronological = useMemo(() => {
     return [...trades].sort((a, b) => {
@@ -225,10 +236,18 @@ export default function Dashboard() {
         </Link>
       </header>
 
-      <JournalManager userProfile={userProfile} onJournalChange={(j) => {
-         setActiveJournal(j);
-         loadTrades(j.id);
-      }} />
+      <div style={{ minHeight: '60px' }}>
+        {userProfile ? (
+          <JournalManager userProfile={userProfile} onJournalChange={(j) => {
+             setActiveJournal(j);
+             loadTrades(j.id);
+          }} />
+        ) : (
+          <div className="glass-panel" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', height: '60px', borderRadius: '0.75rem', marginBottom: '1.25rem', borderTop: '2px solid var(--primary)', opacity: 0.5 }}>
+            Initializing Space...
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <div className="page-container loading" style={{ minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Initializing Core Systems...</div>
@@ -344,7 +363,7 @@ export default function Dashboard() {
             </div>
           </h2>
           <div style={{ overflowX: 'auto' }}>
-            <JournalTable trades={filteredTrades} masterChronological={masterChronological} navigate={navigate} />
+            <JournalTable trades={filteredTrades.slice(0, 10)} masterChronological={masterChronological} navigate={navigate} />
           </div>
         </motion.div>
 
@@ -355,7 +374,7 @@ export default function Dashboard() {
               <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <h1 style={{ margin: 0, fontSize: '1.25rem', letterSpacing: '0.1rem' }}>JOURNAL_FOCUS</h1>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', paddingTop: '0.3rem' }}>{filteredTrades.length} RECENT SESSIONS</div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', paddingTop: '0.3rem' }}>{filteredTrades.length} TOTAL SESSIONS</div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                   <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem' }} onClick={exportCSV}><Download size={16} /> EXPORT_DATA</button>
