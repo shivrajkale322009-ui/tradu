@@ -142,8 +142,8 @@ export default function JournalManager({ userProfile, onJournalChange }) {
   if (loading || !activeJournal) return <div style={{height: '60px', width: '200px', marginBottom: '1rem'}} className="loading"></div>;
 
   return (
-    <div style={{ position: 'relative', zIndex: 50, marginBottom: '2rem' }}>
-      <div className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '1rem', borderTop: '2px solid var(--primary)' }}>
+    <div style={{ position: 'relative', zIndex: 50, marginBottom: '1.25rem' }}>
+      <div className="glass-panel" style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '0.75rem', borderTop: '2px solid var(--primary)' }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', position: 'relative' }}>
           <div 
@@ -151,9 +151,9 @@ export default function JournalManager({ userProfile, onJournalChange }) {
             style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', userSelect: 'none' }}
           >
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Trading Space</span>
-              <div style={{ fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                {activeJournal.name} <ChevronDown size={18} className="text-muted" />
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Trading Space</span>
+              <div style={{ fontSize: '1.05rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {activeJournal.name} <ChevronDown size={16} className="text-muted" />
               </div>
             </div>
           </div>
@@ -170,12 +170,12 @@ export default function JournalManager({ userProfile, onJournalChange }) {
              {roleDisplay(activeJournal.role)}
           </div>
           {activeJournal.role === 'owner' ? (
-            <button onClick={openShareModal} className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-              <Share2 size={16} /> <span className="desktop-only" style={{marginLeft: '0.2rem'}}>Share</span>
+            <button onClick={openShareModal} className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+              <Share2 size={14} /> <span className="desktop-only" style={{marginLeft: '0.2rem'}}>Share</span>
             </button>
           ) : (
-            <button onClick={openShareModal} className="btn-outline" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-              <Users size={16} /> <span className="desktop-only" style={{marginLeft: '0.2rem'}}>Shared With</span>
+            <button onClick={openShareModal} className="btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+              <Users size={14} /> <span className="desktop-only" style={{marginLeft: '0.2rem'}}>Shared With</span>
             </button>
           )}
         </div>

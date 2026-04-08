@@ -11,7 +11,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
-  const [fontSize, setFontSize] = useState(16);
+  const [fontSize, setFontSize] = useState(14);
   const [capital, setCapital] = useState(0);
   const [favouritePairs, setFavouritePairs] = useState([]);
   const [newPair, setNewPair] = useState('');

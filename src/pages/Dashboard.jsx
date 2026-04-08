@@ -205,15 +205,15 @@ export default function Dashboard() {
 
   return (
     <div className="page-container dashboard-layout">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>
+          <h1 style={{ fontSize: '1.5rem', marginBottom: '0.15rem' }}>
             Welcome, {userProfile?.displayName || currentUser.displayName?.split(' ')[0] || 'Trader'}
           </h1>
-          <p className="text-muted" style={{ fontSize: '0.9rem' }}>Market terminal active and ready.</p>
+          <p className="text-muted" style={{ fontSize: '0.8rem' }}>Market terminal active and ready.</p>
         </div>
         <Link to="/profile">
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)', boxShadow: '0 0 10px var(--primary-glow)' }}>
+          <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)', boxShadow: '0 0 8px var(--primary-glow)' }}>
             {userProfile?.photoURL || currentUser.photoURL ? (
               <img src={userProfile?.photoURL || currentUser.photoURL} alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
@@ -352,17 +352,17 @@ export default function Dashboard() {
           {isExpanded && (
             <motion.div layoutId="journal-panel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#050a19', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                  <h1 style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.1rem' }}>JOURNAL_FOCUS</h1>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', paddingTop: '0.3rem' }}>{filteredTrades.length} RECENT SESSIONS</div>
+              <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <h1 style={{ margin: 0, fontSize: '1.25rem', letterSpacing: '0.1rem' }}>JOURNAL_FOCUS</h1>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', paddingTop: '0.3rem' }}>{filteredTrades.length} RECENT SESSIONS</div>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button className="btn-secondary" style={{ padding: '0.5rem 1rem' }} onClick={exportCSV}><Download size={18} /> EXPORT_DATA</button>
-                  <button className="icon-btn" onClick={() => setIsExpanded(false)}><X size={24} /></button>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem' }} onClick={exportCSV}><Download size={16} /> EXPORT_DATA</button>
+                  <button className="icon-btn" onClick={() => setIsExpanded(false)}><X size={20} /></button>
                 </div>
               </div>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
                 <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                   <JournalTable trades={filteredTrades} masterChronological={masterChronological} navigate={navigate} isExpanded={true} />
                 </div>
@@ -399,7 +399,7 @@ const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => 
             <td style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', fontFamily: 'monospace' }}>
               #{String(masterChronological.findIndex(mt => mt.id === trade.id) + 1).padStart(3, '0')}
             </td>
-            <td style={{ color: 'var(--text-muted)', fontSize: isExpanded ? '0.9rem' : '0.8rem', padding: isExpanded ? '1.5rem 1rem' : '1rem' }}>
+            <td style={{ color: 'var(--text-muted)', fontSize: isExpanded ? '0.85rem' : '0.75rem', padding: isExpanded ? '0.75rem 0.6rem' : '0.5rem 0.4rem' }}>
               {(() => {
                 const utcString = `${trade.date}T${trade.time}Z`;
                 const date = new Date(utcString);
@@ -416,13 +416,13 @@ const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => 
               })()}
             </td>
             <td style={{ fontWeight: 600 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: isExpanded ? '1.1rem' : '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: isExpanded ? '1rem' : '0.9rem' }}>
                 {trade.pair}
                 {idx === 0 && !isExpanded && <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />}
               </div>
             </td>
             <td><span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.7rem' }}>{trade.type?.toUpperCase()}</span></td>
-            <td className={Math.abs(Number(trade.pnl)) < 0.5 ? 'glow-text-warning' : (Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger')} style={{ fontWeight: 600, fontSize: isExpanded ? '1.2rem' : '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <td className={Math.abs(Number(trade.pnl)) < 0.5 ? 'glow-text-warning' : (Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger')} style={{ fontWeight: 600, fontSize: isExpanded ? '1.05rem' : '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}
               {Math.abs(Number(trade.pnl)) < 0.5 && <span className="badge bg-warning" style={{ fontSize: '0.64rem', padding: '0.15rem 0.6rem' }}>C2C_SESSION</span>}
             </td>

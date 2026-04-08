@@ -18,11 +18,13 @@ export const getUserProfile = async (userId) => {
     const docSnap = await getDoc(docRef);
     let profileData = { 
       favouritePairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
-      activeJournalId: userId
+      activeJournalId: userId,
+      fontSize: 14
     };
     if (docSnap.exists()) {
       profileData = { ...profileData, ...docSnap.data() };
       profileData.activeJournalId = profileData.activeJournalId || userId;
+      profileData.fontSize = profileData.fontSize || 14;
     }
     
     let activeJournalRole = 'owner';

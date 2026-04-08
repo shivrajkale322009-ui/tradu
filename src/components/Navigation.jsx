@@ -4,17 +4,17 @@ import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Image as ImageIcon
 export default function Navigation() {
   return (
     <div className="bottom-nav">
-      <div className="desktop-only" style={{ marginBottom: '2rem', padding: '0 0.5rem' }}>
-        <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.8rem', letterSpacing: '0.2rem', marginBottom: '0.5rem' }}>SYSTEM.v1</div>
-        <div style={{ color: '#fff', fontSize: '1.2rem', fontWeight: 700 }}>ADMIN_CONSOLE</div>
+      <div className="desktop-only" style={{ marginBottom: '1.5rem', padding: '0 0.5rem' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.2rem', marginBottom: '0.5rem' }}>SYSTEM.v1</div>
+        <div style={{ color: '#fff', fontSize: '1.05rem', fontWeight: 700 }}>ADMIN_CONSOLE</div>
       </div>
       
       <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-        <LayoutDashboard size={20} />
+        <LayoutDashboard size={18} />
         <span>Dashboard</span>
       </NavLink>
       <NavLink to="/add" className={({ isActive }) => (isActive ? 'nav-item active workstation-link' : 'nav-item workstation-link')}>
-        <PlusCircle size={20} />
+        <PlusCircle size={18} />
         <span>Log Trade</span>
       </NavLink>
 
@@ -22,19 +22,19 @@ export default function Navigation() {
         <PlusCircle size={24} />
       </NavLink>
       <NavLink to="/records" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-        <Clock size={20} />
+        <Clock size={18} />
         <span>Archives</span>
       </NavLink>
       <NavLink to="/analytics" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-        <BarChart2 size={20} />
+        <BarChart2 size={18} />
         <span>Analytics</span>
       </NavLink>
       <NavLink to="/visuals" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-        <ImageIcon size={20} />
+        <ImageIcon size={18} />
         <span>Visuals</span>
       </NavLink>
       <NavLink to="/profile" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-        <User size={20} />
+        <User size={18} />
         <span>Terminal</span>
       </NavLink>
       
