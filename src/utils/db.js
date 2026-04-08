@@ -5,6 +5,7 @@ import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 const TRADES_COLLECTION = 'trades';
 const USERS_COLLECTION = 'users';
 const JOURNALS_COLLECTION = 'journals';
+const JOURNAL_ACCESS_COLLECTION = 'journalAccess';
 
 /**
  * Fetches user-specific metadata and workstation preferences.
@@ -15,22 +16,32 @@ export const getUserProfile = async (userId) => {
   try {
     const docRef = doc(firestore, USERS_COLLECTION, userId);
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return { 
-        ...data, 
-        activeJournalId: data.activeJournalId || userId // fallback to private journal
-      };
-    }
-    return { 
+    let profileData = { 
       favouritePairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
       activeJournalId: userId
-    }; 
+    };
+    if (docSnap.exists()) {
+      profileData = { ...profileData, ...docSnap.data() };
+      profileData.activeJournalId = profileData.activeJournalId || userId;
+    }
+    
+    let activeJournalRole = 'owner';
+    try {
+      const q = query(collection(firestore, 'journalAccess'), where('journalId', '==', profileData.activeJournalId), where('userId', '==', userId));
+      const accessSnap = await getDocs(q);
+      if (!accessSnap.empty) {
+        activeJournalRole = accessSnap.docs[0].data().role;
+      }
+    } catch(e) {}
+    
+    profileData.activeJournalRole = activeJournalRole;
+    return profileData;
   } catch (err) {
     console.error('Error getting user profile', err);
     return { 
       favouritePairs: ['BTC/USDT', 'ETH/USDT', 'SOL/USDT'],
-      activeJournalId: userId
+      activeJournalId: userId,
+      activeJournalRole: 'owner'
     };
   }
 };
@@ -191,4 +202,83 @@ export const deleteTrade = async (id) => {
   } catch (err) {
     console.error('Error deleting trade from Firebase', err);
   }
+};
+
+// --- Google Drive Style Journal Functions ---
+
+export const createNewJournal = async (userId, name = "EMA", userEmail = "") => {
+  if (!firestore || !userId) return null;
+  const journalData = {
+    name,
+    ownerId: userId,
+    createdAt: new Date().toISOString()
+  };
+  const docRef = await addDoc(collection(firestore, JOURNALS_COLLECTION), journalData);
+  
+  await addDoc(collection(firestore, JOURNAL_ACCESS_COLLECTION), {
+    journalId: docRef.id,
+    userId,
+    email: userEmail,
+    role: 'owner',
+    username: userEmail ? userEmail.split('@')[0] : 'Trader'
+  });
+
+  return { id: docRef.id, ...journalData, role: 'owner' };
+};
+
+export const getMyJournals = async (userId) => {
+  if (!firestore || !userId) return [];
+  const q = query(collection(firestore, JOURNAL_ACCESS_COLLECTION), where('userId', '==', userId));
+  const snap = await getDocs(q);
+  const accesses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  
+  const journals = await Promise.all(accesses.map(async (acc) => {
+    const jRef = doc(firestore, JOURNALS_COLLECTION, acc.journalId);
+    const jSnap = await getDoc(jRef);
+    if (jSnap.exists()) {
+      return { ...jSnap.data(), id: jSnap.id, role: acc.role, accessId: acc.id };
+    }
+    return null;
+  }));
+  return journals.filter(j => j !== null).sort((a,b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+};
+
+export const shareJournalWithUser = async (journalId, targetEmail, role = 'viewer') => {
+  const userQ = query(collection(firestore, USERS_COLLECTION), where('email', '==', targetEmail));
+  const userSnap = await getDocs(userQ);
+  if (userSnap.empty) throw new Error("USER_NOT_FOUND");
+  
+  const targetUser = userSnap.docs[0];
+  const targetUserId = targetUser.id;
+  const targetUserData = targetUser.data();
+  
+  const accessQ = query(collection(firestore, JOURNAL_ACCESS_COLLECTION), where('journalId', '==', journalId), where('userId', '==', targetUserId));
+  const accessSnap = await getDocs(accessQ);
+  if (!accessSnap.empty) throw new Error("USER_ALREADY_HAS_ACCESS");
+  
+  await addDoc(collection(firestore, JOURNAL_ACCESS_COLLECTION), {
+    journalId,
+    userId: targetUserId,
+    email: targetUserData.email,
+    username: targetUserData.displayName || targetUserData.email.split('@')[0],
+    role
+  });
+};
+
+export const getJournalAccessList = async (journalId) => {
+  const accessQ = query(collection(firestore, JOURNAL_ACCESS_COLLECTION), where('journalId', '==', journalId));
+  const accessSnap = await getDocs(accessQ);
+  return accessSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+export const updateJournalAccessRole = async (accessId, newRole) => {
+  await setDoc(doc(firestore, JOURNAL_ACCESS_COLLECTION, accessId), { role: newRole }, { merge: true });
+};
+
+export const removeJournalAccess = async (accessId) => {
+  await deleteDoc(doc(firestore, JOURNAL_ACCESS_COLLECTION, accessId));
+};
+
+export const renameJournal = async (journalId, newName) => {
+  await setDoc(doc(firestore, JOURNALS_COLLECTION, journalId), { name: newName }, { merge: true });
 };

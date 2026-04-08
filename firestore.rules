@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if user has access to a specific journal
+    function hasAccess(journalId, roles) {
+      let accessPath = /databases/$(database)/documents/journalAccess/$(journalId + "_" + request.auth.uid);
+      return exists(accessPath) && get(accessPath).data.role in roles;
+    }
+
+    match /users/{userId} {
+      // Allow users to read profiles (needed for sharing by email/username) and update their own
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /journals/{journalId} {
+      // Read if user has any role
+      allow read: if request.auth != null && hasAccess(journalId, ['owner', 'editor', 'viewer']);
+      // Write if user is owner
+      allow write: if request.auth != null && hasAccess(journalId, ['owner']);
+      // Allow creation
+      allow create: if request.auth != null;
+    }
+
+    match /journalAccess/{accessId} {
+      // Anyone with access to the journal can see who else has access
+      allow read: if request.auth != null && hasAccess(resource.data.journalId, ['owner', 'editor', 'viewer']);
+      // Only owners can modify who has access
+      allow write: if request.auth != null && (
+        hasAccess(request.resource.data.journalId, ['owner']) || 
+        hasAccess(resource.data.journalId, ['owner'])
+      );
+      // Allow creating the very first owner access record when creating a journal
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid && request.resource.data.role == 'owner';
+    }
+
+    match /trades/{tradeId} {
+      // A trade either belongs to a journalId or a legacy userId
+      function getJournalId(data) {
+        return data.journalId == null ? data.userId : data.journalId;
+      }
+      
+      allow read: if request.auth != null && (
+        hasAccess(getJournalId(resource.data), ['owner', 'editor', 'viewer']) ||
+        resource.data.userId == request.auth.uid
+      );
+
+      allow create, update: if request.auth != null && (
+        hasAccess(getJournalId(request.resource.data), ['owner', 'editor']) ||
+        request.resource.data.userId == request.auth.uid
+      );
+
+      allow delete: if request.auth != null && (
+        hasAccess(getJournalId(resource.data), ['owner', 'editor']) ||
+        resource.data.userId == request.auth.uid
+      );
+    }
+  }
+}

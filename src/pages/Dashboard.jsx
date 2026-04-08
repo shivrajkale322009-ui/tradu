@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import JournalManager from '../components/JournalManager';
 
 const Sparkline = ({ data, color = 'var(--primary)' }) => (
   <div style={{ height: '30px', width: '80px', pointerEvents: 'none' }}>
@@ -102,6 +103,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [timeFilter, setTimeFilter] = useState('ALL');
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeJournal, setActiveJournal] = useState(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -116,11 +118,6 @@ export default function Dashboard() {
   const loadProfile = async (userId) => {
     const profile = await getUserProfile(userId);
     setUserProfile(profile);
-    if (profile?.activeJournalId) {
-      loadTrades(profile.activeJournalId);
-    } else {
-      loadTrades(userId);
-    }
   };
 
   const loadTrades = async (id) => {
@@ -229,6 +226,11 @@ export default function Dashboard() {
           </div>
         </Link>
       </header>
+
+      <JournalManager userProfile={userProfile} onJournalChange={(j) => {
+         setActiveJournal(j);
+         loadTrades(j.id);
+      }} />
 
       <div className="metrics-row">
         <div className="glass-panel metric-card">

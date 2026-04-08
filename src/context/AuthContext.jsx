@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { auth } from '../utils/firebase';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
 
 const AuthContext = createContext();
 
@@ -17,6 +17,14 @@ export const AuthProvider = ({ children }) => {
     }
     const unsubscribe = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
+      if (user) {
+        import('../utils/db').then(({ updateUserProfile }) => {
+          updateUserProfile(user.uid, { 
+            email: user.email, 
+            displayName: user.displayName || user.email.split('@')[0] 
+          });
+        });
+      }
       setLoading(false);
     });
     return unsubscribe;
@@ -28,6 +36,11 @@ export const AuthProvider = ({ children }) => {
     return signInWithPopup(auth, provider);
   };
 
+  const loginWithEmail = (email, password) => {
+    if (!auth) return Promise.reject("Firebase not configured");
+    return signInWithEmailAndPassword(auth, email, password);
+  };
+
   const logout = () => {
     if (!auth) return;
     return signOut(auth);
@@ -36,6 +49,7 @@ export const AuthProvider = ({ children }) => {
   const value = {
     currentUser,
     loginWithGoogle,
+    loginWithEmail,
     logout
   };
 

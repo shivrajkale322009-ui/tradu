@@ -8,12 +8,39 @@ import Profile from './pages/Profile';
 import Records from './pages/Records';
 import Analytics from './pages/Analytics';
 import VisualCards from './pages/VisualCards';
+import Login from './pages/Login';
 import Navigation from './components/Navigation';
 import MatrixBackground from './components/MatrixBackground';
 import ErrorBoundary from './components/ErrorBoundary';
 import SystemLoader from './components/SystemLoader';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+
+function AppRoutes() {
+  const { currentUser } = useAuth();
+
+  if (currentUser === null) {
+    return <Login />;
+  }
+
+  return (
+    <div className="app-layout">
+      <MatrixBackground />
+      <Navigation />
+      <main className="main-content">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/add" element={<AddTrade />} />
+          <Route path="/trade/:id" element={<TradeDetails />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/records" element={<Records />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/visuals" element={<VisualCards />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
 
 function App() {
   const [isSystemActive, setIsSystemActive] = useState(() => {
@@ -35,21 +62,7 @@ function App() {
       <Router>
         <AuthProvider>
           <ThemeProvider>
-            <div className="app-layout">
-              <MatrixBackground />
-              <Navigation />
-              <main className="main-content">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/add" element={<AddTrade />} />
-                  <Route path="/trade/:id" element={<TradeDetails />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/records" element={<Records />} />
-                  <Route path="/analytics" element={<Analytics />} />
-                  <Route path="/visuals" element={<VisualCards />} />
-                </Routes>
-              </main>
-            </div>
+            <AppRoutes />
           </ThemeProvider>
         </AuthProvider>
       </Router>

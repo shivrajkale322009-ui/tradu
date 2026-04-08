@@ -241,6 +241,7 @@ export default function AddTrade() {
   const [syncStatus, setSyncStatus] = useState('syncing');
   const [twelveDataKey, setTwelveDataKey] = useState('');
   const [userTimezone, setUserTimezone] = useState('+00:00');
+  const [userRole, setUserRole] = useState('owner');
 
   useEffect(() => {
     if (currentUser) {
@@ -262,6 +263,9 @@ export default function AddTrade() {
           if (profile.timezone) {
             setUserTimezone(profile.timezone);
           }
+          if (profile.activeJournalRole) {
+            setUserRole(profile.activeJournalRole);
+          }
         }
       });
     }
@@ -273,6 +277,17 @@ export default function AddTrade() {
         <AlertCircle size={40} style={{marginBottom: '1rem', color: 'var(--danger)'}} />
         <h2>Authentication Required</h2>
         <p>You must be signed in to add new trades.</p>
+        <button onClick={() => navigate('/')} className="btn-primary" style={{marginTop: '1rem'}}>Go Home</button>
+      </div>
+    );
+  }
+
+  if (userRole === 'viewer') {
+    return (
+      <div className="page-container empty-state" style={{marginTop: '2rem'}}>
+        <ShieldCheck size={40} style={{marginBottom: '1rem', color: 'var(--secondary)'}} />
+        <h2>Access Restricted</h2>
+        <p>You have View Only access to this trading space. Log into an owned space to append trades.</p>
         <button onClick={() => navigate('/')} className="btn-primary" style={{marginTop: '1rem'}}>Go Home</button>
       </div>
     );

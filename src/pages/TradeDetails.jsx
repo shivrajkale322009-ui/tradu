@@ -34,6 +34,7 @@ export default function TradeDetails() {
   const [userTimezone, setUserTimezone] = useState('+00:00');
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [pendingEntryPrice, setPendingEntryPrice] = useState('');
+  const [userRole, setUserRole] = useState('viewer');
 
   useEffect(() => {
     loadTrade();
@@ -47,6 +48,9 @@ export default function TradeDetails() {
         }
         if (profile?.timezone) {
           setUserTimezone(profile.timezone);
+        }
+        if (profile?.activeJournalRole) {
+          setUserRole(profile.activeJournalRole);
         }
       });
     }
@@ -334,37 +338,41 @@ export default function TradeDetails() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {isLocked ? (
-            <button 
-              onClick={() => setIsLocked(false)} 
-              className="btn-outline"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
-              <Edit3 size={16} /> EDIT_SYSTEM
-            </button>
-          ) : (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button 
-                onClick={handleUpdate} 
-                className="btn-primary" 
-                disabled={isSaving}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
-              >
-                <Save size={16} /> {isSaving ? 'SYNCING...' : 'SAVE'}
+          {userRole !== 'viewer' && (
+            <>
+              {isLocked ? (
+                <button 
+                  onClick={() => setIsLocked(false)} 
+                  className="btn-outline"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Edit3 size={16} /> EDIT_SYSTEM
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button 
+                    onClick={handleUpdate} 
+                    className="btn-primary" 
+                    disabled={isSaving}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+                  >
+                    <Save size={16} /> {isSaving ? 'SYNCING...' : 'SAVE'}
+                  </button>
+                  <button 
+                    onClick={() => { setIsLocked(true); loadTrade(); }} 
+                    className="icon-btn" 
+                    style={{ background: 'rgba(255,255,255,0.05)' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              )}
+              <button onClick={handleDelete} className="icon-btn tooltip-container text-danger">
+                <Trash2 size={20} />
+                <span className="tooltip">Delete</span>
               </button>
-              <button 
-                onClick={() => { setIsLocked(true); loadTrade(); }} 
-                className="icon-btn" 
-                style={{ background: 'rgba(255,255,255,0.05)' }}
-              >
-                <X size={18} />
-              </button>
-            </div>
+            </>
           )}
-          <button onClick={handleDelete} className="icon-btn tooltip-container text-danger">
-            <Trash2 size={20} />
-            <span className="tooltip">Delete</span>
-          </button>
         </div>
       </header>
 
@@ -481,7 +489,7 @@ export default function TradeDetails() {
           <h3 style={{ fontSize: '1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Camera size={18} className="text-primary" /> Visual Intelligence
           </h3>
-          {!isLocked && (
+          {!isLocked && userRole !== 'viewer' && (
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <label className="btn-secondary" style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', cursor: 'pointer', minWidth: '100px', justifyContent: 'center' }}>
                  <ImageIcon size={14} /> GALLERY
@@ -514,14 +522,16 @@ export default function TradeDetails() {
           }}>
             <ImageIcon size={48} style={{ opacity: 0.1 }} />
             <div style={{ fontSize: '0.8rem' }}>NO_VISUAL_EVIDENCE_LOGGED</div>
-            <button 
-              onClick={fetchScreenshot} 
-              disabled={isFetchingScreenshot}
-              className="btn-primary" 
-              style={{ padding: '0.75rem 2rem', background: 'var(--primary)', color: '#000', fontSize: '0.8rem', fontWeight: 800 }}
-            >
-              {isFetchingScreenshot ? 'FETCHING_CANDLES...' : 'FETCH_SCREENSHOT'}
-            </button>
+            {userRole !== 'viewer' && (
+              <button 
+                onClick={fetchScreenshot} 
+                disabled={isFetchingScreenshot}
+                className="btn-primary" 
+                style={{ padding: '0.75rem 2rem', background: 'var(--primary)', color: '#000', fontSize: '0.8rem', fontWeight: 800 }}
+              >
+                {isFetchingScreenshot ? 'FETCHING_CANDLES...' : 'FETCH_SCREENSHOT'}
+              </button>
+            )}
           </div>
         )}
       </div>
