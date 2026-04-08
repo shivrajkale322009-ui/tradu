@@ -118,22 +118,19 @@ export const saveTrade = async (trade, userId, journalId) => {
 export const getTrades = async (journalId) => {
   if (!firestore || !journalId) return [];
   try {
-    const q = query(
-      collection(firestore, TRADES_COLLECTION),
-      or(
-        where('journalId', '==', journalId),
-        where('userId', '==', journalId)
-      )
-    );
-    const querySnapshot = await getDocs(q);
+    let docs = [];
+    const q1 = query(collection(firestore, TRADES_COLLECTION), where('journalId', '==', journalId));
+    const snap1 = await getDocs(q1);
+    snap1.docs.forEach(doc => docs.push({ id: doc.id, ...doc.data(), image: doc.data().imageUrl }));
     
-    const docs = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      image: doc.data().imageUrl
-    }));
+    const q2 = query(collection(firestore, TRADES_COLLECTION), where('userId', '==', journalId));
+    const snap2 = await getDocs(q2);
+    snap2.docs.forEach(doc => {
+      if (!docs.find(d => d.id === doc.id)) {
+         docs.push({ id: doc.id, ...doc.data(), image: doc.data().imageUrl });
+      }
+    });
 
-    // Sort locally by timestamp descending to avoid requiring a composite index in Firestore
     return docs.sort((a, b) => b.timestamp - a.timestamp);
   } catch (err) {
     console.error('Error getting trades from Firebase', err);
