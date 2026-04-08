@@ -25,7 +25,11 @@ service cloud.firestore {
 
     match /journalAccess/{accessId} {
       // Anyone with access to the journal can see who else has access
-      allow read: if request.auth != null && hasAccess(resource.data.journalId, ['owner', 'editor', 'viewer']);
+      // AND users can always list their own access documents
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        hasAccess(resource.data.journalId, ['owner', 'editor', 'viewer'])
+      );
       // Only owners can modify who has access
       allow write: if request.auth != null && (
         hasAccess(request.resource.data.journalId, ['owner']) || 
