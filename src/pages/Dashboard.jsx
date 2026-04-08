@@ -100,7 +100,7 @@ export default function Dashboard() {
   const { currentUser, loginWithGoogle } = useAuth();
   const [trades, setTrades] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [timeFilter, setTimeFilter] = useState('ALL');
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeJournal, setActiveJournal] = useState(null);
@@ -190,8 +190,6 @@ export default function Dashboard() {
     }, []);
   }, [filteredTrades]);
 
-  if (loading) return <div className="page-container loading">Initializing Core Systems...</div>;
-
   if (!currentUser) {
     return (
       <div className="page-container empty-state" style={{marginTop: '4rem'}}>
@@ -232,7 +230,11 @@ export default function Dashboard() {
          loadTrades(j.id);
       }} />
 
-      <div className="metrics-row">
+      {loading ? (
+        <div className="page-container loading" style={{ minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Initializing Core Systems...</div>
+      ) : (
+        <>
+          <div className="metrics-row">
         <div className="glass-panel metric-card">
           <div className="metric-label"><Wallet size={14}/> Total Balance</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -369,6 +371,8 @@ export default function Dashboard() {
           )}
         </AnimatePresence>
       </LayoutGroup>
+        </>
+      )}
     </div>
   );
 }

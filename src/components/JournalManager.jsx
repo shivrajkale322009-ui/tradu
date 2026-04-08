@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Share2, Plus, LogOut, ChevronDown, Check, Settings, Trash2, Edit2, Shield } from 'lucide-react';
+import { Users, Share2, Plus, LogOut, ChevronDown, Check, Settings, Trash2, Edit2, Shield, X } from 'lucide-react';
 import { getMyJournals, createNewJournal, shareJournalWithUser, getJournalAccessList, removeJournalAccess, updateJournalAccessRole, renameJournal, updateUserProfile } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 
