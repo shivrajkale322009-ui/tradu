@@ -206,24 +206,32 @@ export const deleteTrade = async (id) => {
 
 // --- Google Drive Style Journal Functions ---
 
-export const createNewJournal = async (userId, name = "EMA", userEmail = "") => {
+export const createNewJournal = async (userId, name = "EMA", userEmail = "", customId = null) => {
   if (!firestore || !userId) return null;
   const journalData = {
     name,
     ownerId: userId,
     createdAt: new Date().toISOString()
   };
-  const docRef = await addDoc(collection(firestore, JOURNALS_COLLECTION), journalData);
+  
+  let docRefId;
+  if (customId) {
+    await setDoc(doc(firestore, JOURNALS_COLLECTION, customId), journalData);
+    docRefId = customId;
+  } else {
+    const docRef = await addDoc(collection(firestore, JOURNALS_COLLECTION), journalData);
+    docRefId = docRef.id;
+  }
   
   await addDoc(collection(firestore, JOURNAL_ACCESS_COLLECTION), {
-    journalId: docRef.id,
+    journalId: docRefId,
     userId,
     email: userEmail,
     role: 'owner',
     username: userEmail ? userEmail.split('@')[0] : 'Trader'
   });
 
-  return { id: docRef.id, ...journalData, role: 'owner' };
+  return { id: docRefId, ...journalData, role: 'owner' };
 };
 
 export const getMyJournals = async (userId) => {

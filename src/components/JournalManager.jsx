@@ -33,6 +33,17 @@ export default function JournalManager({ userProfile, onJournalChange }) {
     setLoading(true);
     try {
       let myJournals = await getMyJournals(currentUser.uid);
+      
+      const hasLegacy = myJournals.some(j => j.id === currentUser.uid);
+      if (!hasLegacy) {
+        try {
+          const legacyJ = await createNewJournal(currentUser.uid, "Private Vault", currentUser.email, currentUser.uid);
+          myJournals.unshift(legacyJ);
+        } catch(err) {
+          console.error("Failed to map legacy vault", err);
+        }
+      }
+
       if (myJournals.length === 0) {
         const newJ = await createNewJournal(currentUser.uid, "EMA", currentUser.email);
         myJournals = [newJ];
