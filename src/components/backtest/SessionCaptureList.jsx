@@ -4,7 +4,7 @@ import { Camera, Calendar, Clock, Trash2, Maximize2, X, ChevronRight, LayoutGrid
 import { getSessionCaptures, deleteSessionCapture } from '../../utils/db';
 import { useAuth } from '../../context/AuthContext';
 
-export default function SessionCaptureList() {
+export default function SessionCaptureList({ onEmpty }) {
     const { currentUser } = useAuth();
     const [captures, setCaptures] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -30,10 +30,15 @@ export default function SessionCaptureList() {
         }
     };
 
-    if (loading) return <div style={{ padding: '2rem', textAlign: 'center', opacity: 0.5 }}>FETCHING_SESSION_INTEL...</div>;
+    if (loading) return (
+        <div style={{ padding: '4rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+            <div className="spinner" />
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>SYNCHRONIZING_ARCHIVE...</span>
+        </div>
+    );
 
     if (captures.length === 0) {
-        return (
+        return onEmpty ? onEmpty() : (
             <div className="glass-panel" style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(255,255,255,0.01)', border: '1px dashed var(--border)' }}>
                 <Camera size={48} style={{ opacity: 0.1, marginBottom: '1.5rem' }} />
                 <h3 style={{ margin: 0, fontSize: '1.1rem' }}>NO_SESSIONS_CAPTURED</h3>
