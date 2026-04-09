@@ -401,7 +401,7 @@ export default function TradeDetails() {
                   </span>
                   <span className="badge bg-muted">
                     <Calendar size={14} />
-                    {new Date(`${trade.date}T${trade.time || '00:00'}Z`).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })}
+                    {new Date(`${trade.date}T${trade.time || '00:00'}Z`).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'UTC' })}
                   </span>
                   <span className="badge" style={{ background: 'rgba(0, 240, 255, 0.05)', color: 'var(--primary)' }}>
                     ENTRY: {trade.entry || '---'}

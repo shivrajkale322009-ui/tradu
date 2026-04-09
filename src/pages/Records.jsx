@@ -271,7 +271,7 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
                   <>
                     <div style={{ fontWeight: 600, color: '#fff' }}>{date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                     <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-                      {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                     </div>
                   </>
                 );

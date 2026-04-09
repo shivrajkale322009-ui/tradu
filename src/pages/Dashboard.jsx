@@ -483,7 +483,7 @@ const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => 
                   <>
                     {date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}<br/>
                     <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>
-                      {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                     </span>
                   </>
                 );

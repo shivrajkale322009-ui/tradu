@@ -6,37 +6,55 @@ import SessionCaptureForm from '../components/backtest/SessionCaptureForm';
 
 export default function Backtest() {
   const [showCaptureForm, setShowCaptureForm] = useState(false);
+  const [stats, setStats] = useState({ total: 0, thisWeek: 0 });
 
   return (
-    <div className="page-container" style={{ maxWidth: '1200px' }}>
+    <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto' }}>
       <header style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
-        alignItems: 'flex-end', 
-        marginBottom: '2.5rem',
-        paddingBottom: '1.5rem',
+        alignItems: 'center', 
+        marginBottom: '3rem',
+        padding: '2rem 0',
         borderBottom: '1px solid var(--border)'
       }}>
         <div>
-          <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
-            <Camera className="text-primary" /> SESSION_ARCHIVE
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0, fontSize: '1.5rem', fontWeight: 900 }}>
+            <Camera className="text-primary" size={28} /> SESSION_ARCHIVE
           </h1>
-          <p className="text-muted" style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Visual documentation of trading sessions and multi-timeframe protocols.</p>
+          <p className="text-muted" style={{ fontSize: '0.75rem', marginTop: '0.4rem', letterSpacing: '0.05em' }}>
+            VISUAL_HISTORY_LOG
+          </p>
         </div>
-        
-        <motion.button 
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowCaptureForm(true)}
-          className="btn-primary"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.8rem 1.75rem' }}
-        >
-          <Plus size={18} /> ADD_SESSION
-        </motion.button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
+          <div style={{ display: 'flex', gap: '2rem' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, marginBottom: '0.2rem' }}>TOTAL_SESSIONS</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary)', fontFamily: 'monospace' }}>{stats.total.toString().padStart(3, '0')}</div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 800, marginBottom: '0.2rem' }}>THIS_WEEK</div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fff', fontFamily: 'monospace' }}>{stats.thisWeek.toString().padStart(2, '0')}</div>
+            </div>
+          </div>
+          
+          <motion.button 
+            whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)' }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setShowCaptureForm(true)}
+            className="btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.8rem 1.75rem', fontWeight: 800 }}
+          >
+            <Plus size={18} /> ADD_SESSION
+          </motion.button>
+        </div>
       </header>
 
       <div style={{ minHeight: '60vh' }}>
-        <SessionCaptureList onEmpty={() => (
+        <SessionCaptureList 
+          onStatsUpdate={setStats}
+          onEmpty={() => (
           <div className="glass-panel" style={{ 
             padding: '6rem 2rem', 
             display: 'flex', 
