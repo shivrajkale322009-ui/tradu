@@ -13,6 +13,9 @@ import BacktestDashboard from '../components/backtest/BacktestDashboard';
 import BacktestForm from '../components/backtest/BacktestForm';
 import BacktestSession from '../components/backtest/BacktestSession';
 import StrategyComparison from '../components/backtest/BacktestStrategyComparison';
+import SessionCaptureList from '../components/backtest/SessionCaptureList';
+import SessionCaptureForm from '../components/backtest/SessionCaptureForm';
+import { Camera, Layers } from 'lucide-react';
 
 export default function Backtest() {
   const { id } = useParams();
@@ -25,6 +28,8 @@ export default function Backtest() {
   const [compareMode, setCompareMode] = useState(false);
   const [selectedForCompare, setSelectedForCompare] = useState([]);
   const [activeBacktest, setActiveBacktest] = useState(null);
+  const [view, setView] = useState('simulations'); // simulations, captures
+  const [showCaptureForm, setShowCaptureForm] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -85,7 +90,46 @@ export default function Backtest() {
           <p className="text-muted" style={{ fontSize: '0.8rem' }}>Simulate performance using historical protocols.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          {backtests.length > 1 && (
+          <div className="compact-bar" style={{ padding: '0.25rem', gap: '0.25rem' }}>
+            <button 
+              onClick={() => setView('simulations')} 
+              className={`nav-item ${view === 'simulations' ? 'active' : ''}`}
+              style={{ width: 'auto', height: 'auto', padding: '0.4rem 1rem', fontSize: '0.7rem' }}
+            >
+              <Zap size={14} /> SIMULATIONS
+            </button>
+            <button 
+              onClick={() => setView('captures')} 
+              className={`nav-item ${view === 'captures' ? 'active' : ''}`}
+              style={{ width: 'auto', height: 'auto', padding: '0.4rem 1rem', fontSize: '0.7rem' }}
+            >
+              <Camera size={14} /> CAPTURES
+            </button>
+          </div>
+
+          {view === 'simulations' ? (
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowForm(true)}
+              className="btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}
+            >
+              <Plus size={18} /> NEW_BACKTEST
+            </motion.button>
+          ) : (
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCaptureForm(true)}
+              className="btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}
+            >
+              <Camera size={18} /> NEW_SESSION_CAPTURE
+            </motion.button>
+          )}
+
+          {backtests.length > 1 && view === 'simulations' && (
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -99,15 +143,6 @@ export default function Backtest() {
               <Zap size={18} className={compareMode ? 'text-primary' : ''} /> {compareMode ? 'EXIT_COMPARE' : 'COMPARE_MODELS'}
             </motion.button>
           )}
-          <motion.button 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setShowForm(true)}
-            className="btn-primary"
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem' }}
-          >
-            <Plus size={18} /> NEW_BACKTEST
-          </motion.button>
         </div>
       </header>
 
@@ -117,7 +152,7 @@ export default function Backtest() {
         </div>
       )}
 
-      {backtests.length === 0 ? (
+      {backtests.length === 0 && view === 'simulations' ? (
         <div className="glass-panel" style={{ 
           padding: '4rem 2rem', 
           display: 'flex', 
@@ -147,6 +182,7 @@ export default function Backtest() {
           </motion.button>
         </div>
       ) : (
+        view === 'simulations' ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
           {backtests.map((bt) => (
             <motion.div 
@@ -224,6 +260,8 @@ export default function Backtest() {
             </motion.div>
           ))}
         </div>
+      ) : (
+        <SessionCaptureList />
       )}
 
       <AnimatePresence>
@@ -231,6 +269,12 @@ export default function Backtest() {
           <BacktestForm 
             onClose={() => setShowForm(false)} 
             onSubmit={handleCreateBacktest} 
+          />
+        )}
+        {showCaptureForm && (
+          <SessionCaptureForm
+            onClose={() => setShowCaptureForm(false)}
+            onSave={() => window.location.reload()} // Simple refresh to fetch new data
           />
         )}
       </AnimatePresence>

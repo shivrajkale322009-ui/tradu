@@ -8,6 +8,7 @@ const JOURNALS_COLLECTION = 'journals';
 const JOURNAL_ACCESS_COLLECTION = 'journalAccess';
 const BACKTESTS_COLLECTION = 'backtests';
 const BACKTEST_TRADES_COLLECTION = 'backtestTrades';
+const SESSION_CAPTURES_COLLECTION = 'sessionCaptures';
 
 /**
  * Fetches user-specific metadata and workstation preferences.
@@ -382,6 +383,7 @@ export const updateBacktestStats = async (backtestId) => {
   }, { merge: true });
 };
 
+
 export const getBacktestById = async (backtestId) => {
   if (!firestore || !backtestId) return null;
   const docRef = doc(firestore, BACKTESTS_COLLECTION, backtestId);
@@ -390,4 +392,39 @@ export const getBacktestById = async (backtestId) => {
     return { id: docSnap.id, ...docSnap.data() };
   }
   return null;
+};
+
+// --- Session Capture Functions ---
+
+export const saveSessionCapture = async (userId, sessionData) => {
+  if (!firestore || !userId) return null;
+  const newSession = {
+    ...sessionData,
+    userId,
+    createdAt: new Date().toISOString(),
+    timestamp: Date.now()
+  };
+  const docRef = await addDoc(collection(firestore, SESSION_CAPTURES_COLLECTION), newSession);
+  return { id: docRef.id, ...newSession };
+};
+
+export const getSessionCaptures = async (userId) => {
+  if (!firestore || !userId) return [];
+  try {
+    const q = query(collection(firestore, SESSION_CAPTURES_COLLECTION), where('userId', '==', userId), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (err) {
+    console.error('Error getting session captures', err);
+    return [];
+  }
+};
+
+export const deleteSessionCapture = async (id) => {
+  if (!firestore || !id) return;
+  try {
+    await deleteDoc(doc(firestore, SESSION_CAPTURES_COLLECTION, id));
+  } catch (err) {
+    console.error('Error deleting session capture', err);
+  }
 };
