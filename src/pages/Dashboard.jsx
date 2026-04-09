@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { getTrades, deleteTrade, getUserProfile } from '../utils/db';
+import { getTrades, deleteTrade, getUserProfile, recoverySweep } from '../utils/db';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   TrendingUp, TrendingDown, Trash2, LogIn, User, ArrowRight, Activity, 
-  Crosshair, Target, LayoutDashboard, Wallet, Clock, Shield, ArrowUpRight, Maximize2, Download, X 
+  Crosshair, Target, LayoutDashboard, Wallet, Clock, Shield, ArrowUpRight, Maximize2, Download, X, Database 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -104,6 +104,7 @@ export default function Dashboard() {
   const [timeFilter, setTimeFilter] = useState('ALL');
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeJournal, setActiveJournal] = useState(null);
+  const [globalArchive, setGlobalArchive] = useState([]);
 
   useEffect(() => {
     if (currentUser) {
@@ -118,6 +119,8 @@ export default function Dashboard() {
   const loadProfile = async (userId) => {
     const profile = await getUserProfile(userId);
     setUserProfile(profile);
+    const fullArchive = await recoverySweep(userId);
+    if (fullArchive) setGlobalArchive(fullArchive);
   };
 
   const loadTrades = async (id) => {
@@ -191,6 +194,18 @@ export default function Dashboard() {
       pnlPoints
     };
   }, [filteredTrades]);
+
+  const archiveSummary = useMemo(() => {
+    const breakdown = {};
+    const sourceArr = globalArchive.length > 0 ? globalArchive : masterChronological;
+    sourceArr.forEach(t => {
+      const p = t.pair || 'UNKNOWN';
+      if (!breakdown[p]) breakdown[p] = { count: 0, pnl: 0 };
+      breakdown[p].count += 1;
+      breakdown[p].pnl += Number(t.pnl) || 0;
+    });
+    return Object.entries(breakdown).sort((a,b) => b[1].pnl - a[1].pnl).slice(0, 10); // Top 10 pairs
+  }, [globalArchive, masterChronological]);
 
   const chartData = useMemo(() => {
     return filteredTrades.slice().reverse().reduce((acc, trade) => {
@@ -307,7 +322,12 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <div style={{ height: '280px', width: '100%' }}>
+          <div style={{ height: '280px', width: '100%', position: 'relative' }}>
+            {filteredTrades.length === 0 && (
+               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                 No sessions recorded in this space yet.
+               </div>
+            )}
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
                 <defs>
@@ -346,8 +366,34 @@ export default function Dashboard() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            {filteredTrades.length === 0 && (
+               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', color: 'var(--text-muted)', fontSize: '0.8rem', borderRadius: 'inherit', zIndex: 10 }}>
+                 Awaiting Data
+               </div>
+            )}
             <CircularProgress value={stats.winRate} size={140} strokeWidth={12} color="var(--primary)" />
+          </div>
+
+          <div className="glass-panel" style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <h3 style={{ margin: 0, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+              <Database size={16} className="text-secondary" /> Archive Summary Breakdown
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto', flex: 1, maxHeight: '200px' }}>
+              {archiveSummary.map(([pair, data]) => (
+                <div key={pair} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', borderRadius: '0.4rem', border: '1px solid var(--border)' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>{pair}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{data.count} Sessions</div>
+                  </div>
+                  <div className={data.pnl >= 0 ? 'text-success' : 'text-danger'} style={{ fontWeight: 700, fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    {data.pnl >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />} 
+                    {data.pnl >= 0 ? '+' : ''}${Math.abs(data.pnl).toFixed(2)}
+                  </div>
+                </div>
+              ))}
+              {archiveSummary.length === 0 && <div className="text-muted" style={{ fontSize: '0.8rem', textAlign: 'center', padding: '1rem' }}>No data in archive.</div>}
+            </div>
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { getUserProfile, updateUserProfile, saveTrade, createSharedJournal, joinSharedJournal, leaveSharedJournal, recoverySweep } from '../utils/db';
 import { LogOut, ArrowLeft, Plus, Trash2, Shield, Settings, User, Palette, Camera, Check, X, Edit2, Database, Users, Share2, Activity, Link as LinkIcon, Copy, Clock, Zap } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import ManageList from '../components/ManageList';
 
 export default function Profile() {
   const { currentUser, logout } = useAuth();
@@ -280,45 +281,50 @@ export default function Profile() {
     '+07:00', '+08:00', '+08:45', '+09:00', '+09:30', '+10:00', '+10:30', '+11:00', '+12:00', '+12:45', '+13:00', '+14:00'
   ];
 
-  const handleAddPair = async (e) => {
-    e.preventDefault();
-    if (!newPair.trim()) return;
-    
-    // Convert to uppercase and normalize format slightly if needed
-    const pairToAdd = newPair.trim().toUpperCase();
-    if (favouritePairs.includes(pairToAdd)) {
-      setNewPair('');
-      return;
-    }
-
-    const updatedPairs = [...favouritePairs, pairToAdd];
+  const handleAddPair = async (pairToAdd) => {
+    if (favouritePairs.includes(pairToAdd.toUpperCase())) return;
+    const updatedPairs = [...favouritePairs, pairToAdd.toUpperCase()];
     setFavouritePairs(updatedPairs);
-    setNewPair('');
     await updateUserProfile(currentUser.uid, { favouritePairs: updatedPairs });
   };
-
   const handleRemovePair = async (pairToRemove) => {
     const updatedPairs = favouritePairs.filter(p => p !== pairToRemove);
     setFavouritePairs(updatedPairs);
     await updateUserProfile(currentUser.uid, { favouritePairs: updatedPairs });
   };
-
-  const handleAddStrategy = async (e) => {
-    e.preventDefault();
-    if (!newStrategy.trim()) return;
-    const sToAdd = newStrategy.trim();
-    if (strategies.includes(sToAdd)) {
-      setNewStrategy('');
-      return;
-    }
-    const updated = [...strategies, sToAdd];
-    setStrategies(updated);
-    setNewStrategy('');
-    await updateUserProfile(currentUser.uid, { strategies: updated });
+  const handleEditPair = async (oldVal, newVal) => {
+    const updated = favouritePairs.map(p => p === oldVal ? newVal.toUpperCase() : p);
+    setFavouritePairs(updated);
+    await updateUserProfile(currentUser.uid, { favouritePairs: updated });
+  };
+  const handleReorderPairs = async (src, dst) => {
+    const updated = [...favouritePairs];
+    const [removed] = updated.splice(src, 1);
+    updated.splice(dst, 0, removed);
+    setFavouritePairs(updated);
+    await updateUserProfile(currentUser.uid, { favouritePairs: updated });
   };
 
+  const handleAddStrategy = async (sToAdd) => {
+    if (strategies.includes(sToAdd)) return;
+    const updated = [...strategies, sToAdd];
+    setStrategies(updated);
+    await updateUserProfile(currentUser.uid, { strategies: updated });
+  };
   const handleRemoveStrategy = async (sToRemove) => {
     const updated = strategies.filter(s => s !== sToRemove);
+    setStrategies(updated);
+    await updateUserProfile(currentUser.uid, { strategies: updated });
+  };
+  const handleEditStrategy = async (oldVal, newVal) => {
+    const updated = strategies.map(s => s === oldVal ? newVal : s);
+    setStrategies(updated);
+    await updateUserProfile(currentUser.uid, { strategies: updated });
+  };
+  const handleReorderStrategy = async (src, dst) => {
+    const updated = [...strategies];
+    const [removed] = updated.splice(src, 1);
+    updated.splice(dst, 0, removed);
     setStrategies(updated);
     await updateUserProfile(currentUser.uid, { strategies: updated });
   };
@@ -599,92 +605,27 @@ export default function Profile() {
       </div>
 
       <div className="settings-section" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <Shield size={20} className="text-primary" />
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Core Strategies</h2>
-        </div>
+        <ManageList 
+          title="Core Strategies" 
+          icon={Shield} 
+          items={strategies} 
+          placeholder="Strategy"
+          onAdd={handleAddStrategy}
+          onRemove={handleRemoveStrategy}
+          onEdit={handleEditStrategy}
+          onReorder={handleReorderStrategy}
+        />
         
-        <p className="subtitle">Manage the strategies that appear in your trade logging menu.</p>
-
-        <form onSubmit={handleAddStrategy} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-          <input
-            type="text"
-            className="input"
-            placeholder="e.g. Trend Following"
-            value={newStrategy}
-            onChange={(e) => setNewStrategy(e.target.value)}
-            style={{ flex: 1 }}
-          />
-          <button type="submit" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={18} /> Add
-          </button>
-        </form>
-
-        <div className="pairs-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {strategies.length === 0 ? (
-            <div className="empty-state" style={{ padding: '1rem', fontSize: '0.875rem' }}>
-              No strategies added yet.
-            </div>
-          ) : (
-            strategies.map(s => (
-              <div key={s} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
-                <span style={{ fontWeight: 500 }}>{s}</span>
-                <button 
-                  onClick={() => handleRemoveStrategy(s)}
-                  className="icon-btn text-muted hover-danger"
-                  style={{ padding: '0.25rem' }}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="settings-section">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <Settings size={20} className="text-primary" />
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Favourite Pairs</h2>
-        </div>
-        
-        <p className="subtitle">These pairs will appear in the dropdown when adding a new trade.</p>
-
-        <form onSubmit={handleAddPair} style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
-          <input
-            type="text"
-            className="input"
-            placeholder="e.g. BTC/USDT"
-            value={newPair}
-            onChange={(e) => setNewPair(e.target.value)}
-            style={{ flex: 1, textTransform: 'uppercase' }}
-          />
-          <button type="submit" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={18} /> Add
-          </button>
-        </form>
-
-        <div className="pairs-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          {favouritePairs.length === 0 ? (
-            <div className="empty-state" style={{ padding: '1rem', fontSize: '0.875rem' }}>
-              No favourite pairs added yet.
-            </div>
-          ) : (
-            favouritePairs.map(pair => (
-              <div key={pair} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', backgroundColor: 'rgba(255, 255, 255, 0.03)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
-                <span style={{ fontWeight: 500 }}>{pair}</span>
-                <button 
-                  onClick={() => handleRemovePair(pair)}
-                  className="icon-btn tooltip-container text-muted hover-danger"
-                  style={{ padding: '0.25rem' }}
-                  title="Remove pair"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
+        <ManageList 
+          title="Favourite Pairs" 
+          icon={Settings} 
+          items={favouritePairs} 
+          placeholder="Pair (e.g. BTC/USDT)"
+          onAdd={handleAddPair}
+          onRemove={handleRemovePair}
+          onEdit={handleEditPair}
+          onReorder={handleReorderPairs}
+        />
       </div>
 
       <div className="settings-section" style={{ marginTop: '2.5rem', border: '1px solid rgba(255, 51, 102, 0.4)', borderRadius: '1rem', padding: '2rem', background: 'rgba(255, 51, 102, 0.05)' }}>

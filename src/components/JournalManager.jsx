@@ -41,6 +41,12 @@ export default function JournalManager({ userProfile, onJournalChange }) {
           myJournals.unshift(legacyJ);
         } catch(err) {
           console.error("Failed to map legacy vault", err);
+          myJournals.unshift({
+             id: currentUser.uid,
+             name: "Private Vault (Legacy)",
+             role: "owner",
+             createdAt: new Date().toISOString()
+          });
         }
       }
 
@@ -52,16 +58,29 @@ export default function JournalManager({ userProfile, onJournalChange }) {
       
       // Find active or default
       let active = myJournals.find(j => j.id === userProfile?.activeJournalId);
+      
+      // Auto-recover selection to Legacy Vault if stuck on placeholder EMA template
+      if (active && active.name === "EMA" && myJournals.some(j => j.id === currentUser.uid)) {
+         active = myJournals.find(j => j.id === currentUser.uid);
+      }
+
       if (!active) {
         active = myJournals[0];
-        if (userProfile?.activeJournalId !== active.id) {
-           await updateUserProfile(currentUser.uid, { activeJournalId: active.id });
-        }
+      }
+      
+      if (userProfile?.activeJournalId !== active.id) {
+         await updateUserProfile(currentUser.uid, { activeJournalId: active.id });
       }
       setActiveJournal(active);
       onJournalChange(active);
     } catch(err) {
-      console.error(err);
+      console.error("JournalManager Auth/Fetch Error:", err);
+      // Critical fallback to ensure the user is not trapped in an invisible/unusable state
+      const fallback = { id: currentUser.uid, name: "Private Vault (Legacy)", role: "owner" };
+      setJournals([fallback]);
+      setActiveJournal(fallback);
+      onJournalChange(fallback);
+      await updateUserProfile(currentUser.uid, { activeJournalId: fallback.id }).catch(() => {});
     }
     setLoading(false);
   };
