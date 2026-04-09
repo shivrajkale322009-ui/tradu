@@ -4,9 +4,8 @@ import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Image as ImageIcon
 export default function Navigation() {
   return (
     <div className="bottom-nav">
-      <div className="desktop-only" style={{ marginBottom: '1.5rem', padding: '0 0.5rem' }}>
-        <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.75rem', letterSpacing: '0.2rem', marginBottom: '0.5rem' }}>SYSTEM.v1</div>
-        <div style={{ color: '#fff', fontSize: '1.05rem', fontWeight: 700 }}>ADMIN_CONSOLE</div>
+      <div className="desktop-only" style={{ marginBottom: '1rem', textAlign: 'center' }}>
+        <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.6rem', letterSpacing: '0.1rem' }}>v2.4</div>
       </div>
       
       <NavLink to="/" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
