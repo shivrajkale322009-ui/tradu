@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Camera, Plus, Trash2, Image as ImageIcon, CheckCircle2, Upload, AlertCircle } from 'lucide-react';
+import { X, Camera, Plus, Trash2, Image as ImageIcon, CheckCircle2, Upload, AlertCircle, Info } from 'lucide-react';
 import { saveSessionCapture } from '../../utils/db';
 import { useAuth } from '../../context/AuthContext';
 
