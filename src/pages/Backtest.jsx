@@ -15,7 +15,7 @@ import BacktestSession from '../components/backtest/BacktestSession';
 import StrategyComparison from '../components/backtest/BacktestStrategyComparison';
 import SessionCaptureList from '../components/backtest/SessionCaptureList';
 import SessionCaptureForm from '../components/backtest/SessionCaptureForm';
-import { Camera, Layers } from 'lucide-react';
+import { Camera, Layers, Zap } from 'lucide-react';
 
 export default function Backtest() {
   const { id } = useParams();
