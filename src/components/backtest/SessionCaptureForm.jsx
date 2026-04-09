@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Camera, Plus, Trash2, Image as ImageIcon, CheckCircle2, Upload, AlertCircle, Info } from 'lucide-react';
-import { saveSessionCapture } from '../../utils/db';
+import { saveSessionCapture, getUserProfile } from '../../utils/db';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SessionCaptureForm({ onClose, onSave }) {
@@ -17,10 +17,26 @@ export default function SessionCaptureForm({ onClose, onSave }) {
         notes: ''
     });
 
+    const [availableAssets, setAvailableAssets] = useState(['USOIL', 'BTCUSD', 'NAS100']);
+
     const [screenshots, setScreenshots] = useState([]); // Array of { asset, timeframe, image }
     const [isSaving, setIsSaving] = useState(false);
 
-    const ASSET_OPTIONS = ['USOIL', 'BTCUSD', 'ETHUSD', 'EURUSD', 'GBPUSD', 'NAS100', 'XAUUSD', 'GBP/JPY', 'US30'];
+    useEffect(() => {
+        if (currentUser) {
+            getUserProfile(currentUser.uid).then(profile => {
+                if (profile?.favouritePairs && profile.favouritePairs.length > 0) {
+                    setAvailableAssets(profile.favouritePairs);
+                    // Also auto-select the first one if none selected
+                    setSessionData(prev => ({ ...prev, assets: [profile.favouritePairs[0]] }));
+                } else if (profile?.favouritePair) {
+                    setAvailableAssets([profile.favouritePair]);
+                    setSessionData(prev => ({ ...prev, assets: [profile.favouritePair] }));
+                }
+            });
+        }
+    }, [currentUser]);
+
     const TIMEFRAME_OPTIONS = ['1m', '5m', '15m', '1h', '4h', 'D'];
 
     const toggleAsset = (asset) => {
@@ -176,13 +192,24 @@ export default function SessionCaptureForm({ onClose, onSave }) {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <div>
                                     <label style={{ fontSize: '0.65rem', color: 'var(--secondary)', marginBottom: '0.75rem', display: 'block' }}>02_ASSETS_TO_TRACK</label>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                        {ASSET_OPTIONS.map(a => (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+                                        {availableAssets.map(a => (
                                             <button 
                                                 key={a}
                                                 onClick={() => toggleAsset(a)}
-                                                className={`badge ${sessionData.assets.includes(a) ? 'bg-primary' : 'bg-muted'}`}
-                                                style={{ cursor: 'pointer', border: '1px solid var(--border)', padding: '0.5rem 0.8rem', fontSize: '0.7rem' }}
+                                                className={`badge ${sessionData.assets.includes(a) ? 'active-selection' : 'bg-muted'}`}
+                                                style={{ 
+                                                    cursor: 'pointer', 
+                                                    border: '1px solid var(--border)', 
+                                                    padding: '0.6rem 1rem', 
+                                                    fontSize: '0.75rem',
+                                                    transition: 'all 0.2s',
+                                                    background: sessionData.assets.includes(a) ? 'var(--primary)' : 'rgba(255,255,255,0.03)',
+                                                    color: sessionData.assets.includes(a) ? '#000' : 'var(--text-muted)',
+                                                    fontWeight: sessionData.assets.includes(a) ? 800 : 400,
+                                                    boxShadow: sessionData.assets.includes(a) ? '0 0 15px var(--primary-glow)' : 'none',
+                                                    borderColor: sessionData.assets.includes(a) ? 'var(--primary)' : 'var(--border)'
+                                                }}
                                             >
                                                 {a}
                                             </button>
@@ -191,13 +218,24 @@ export default function SessionCaptureForm({ onClose, onSave }) {
                                 </div>
                                 <div>
                                     <label style={{ fontSize: '0.65rem', color: 'var(--secondary)', marginBottom: '0.75rem', display: 'block' }}>03_TIMEFRAME_ANALYSIS</label>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
                                         {TIMEFRAME_OPTIONS.map(tf => (
                                             <button 
                                                 key={tf}
                                                 onClick={() => toggleTimeframe(tf)}
-                                                className={`badge ${sessionData.timeframes.includes(tf) ? 'bg-primary' : 'bg-muted'}`}
-                                                style={{ cursor: 'pointer', border: '1px solid var(--border)', padding: '0.5rem 0.8rem', fontSize: '0.7rem' }}
+                                                className={`badge ${sessionData.timeframes.includes(tf) ? 'active-selection' : 'bg-muted'}`}
+                                                style={{ 
+                                                    cursor: 'pointer', 
+                                                    border: '1px solid var(--border)', 
+                                                    padding: '0.6rem 1rem', 
+                                                    fontSize: '0.75rem',
+                                                    transition: 'all 0.2s',
+                                                    background: sessionData.timeframes.includes(tf) ? 'var(--secondary)' : 'rgba(255,255,255,0.03)',
+                                                    color: sessionData.timeframes.includes(tf) ? '#000' : 'var(--text-muted)',
+                                                    fontWeight: sessionData.timeframes.includes(tf) ? 800 : 400,
+                                                    boxShadow: sessionData.timeframes.includes(tf) ? '0 0 15px var(--secondary-glow)' : 'none',
+                                                    borderColor: sessionData.timeframes.includes(tf) ? 'var(--secondary)' : 'var(--border)'
+                                                }}
                                             >
                                                 {tf}
                                             </button>
