@@ -53,21 +53,43 @@ export default function SessionCaptureForm({ onClose, onSave }) {
         }));
     };
 
-    const handleImageUpload = (asset, timeframe, file) => {
+    const compressImage = (base64Str) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = base64Str;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 1200;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                // Lower quality to 0.7 to save space
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+        });
+    };
+
+    const handleImageUpload = async (asset, timeframe, file) => {
         if (!file) return;
         
-        // Validation: Size check (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert("File size exceeds 5MB limit.");
-            return;
-        }
-
         const reader = new FileReader();
-        reader.onloadend = () => {
-            const imageData = reader.result;
+        reader.onloadend = async () => {
+            const rawImageData = reader.result;
+            // Compress before adding to state
+            const compressedImageData = await compressImage(rawImageData);
+            
             setScreenshots(prev => {
                 const filtered = prev.filter(s => !(s.asset === asset && s.timeframe === timeframe));
-                return [...filtered, { asset, timeframe, image: imageData }];
+                return [...filtered, { asset, timeframe, image: compressedImageData }];
             });
         };
         reader.readAsDataURL(file);
