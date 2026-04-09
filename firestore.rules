@@ -62,5 +62,27 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid
       );
     }
+
+    // New Rules for Session Archives and Backtests
+    match /sessionCaptures/{captureId} {
+      allow read, write: if request.auth != null && (
+        (resource == null || resource.data.userId == request.auth.uid) ||
+        (request.resource == null || request.resource.data.userId == request.auth.uid)
+      );
+    }
+
+    match /backtests/{backtestId} {
+      allow read, write: if request.auth != null && (
+        (resource == null || resource.data.userId == request.auth.uid) ||
+        (request.resource == null || request.resource.data.userId == request.auth.uid)
+      );
+    }
+
+    match /backtestTrades/{tradeId} {
+      allow read, write: if request.auth != null && (
+        (resource == null || resource.data.userId == request.auth.uid) ||
+        (request.resource == null || request.resource.data.userId == request.auth.uid)
+      );
+    }
   }
 }
