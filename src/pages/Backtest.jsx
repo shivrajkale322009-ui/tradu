@@ -262,7 +262,7 @@ export default function Backtest() {
         </div>
       ) : (
         <SessionCaptureList />
-      )}
+      ))}
 
       <AnimatePresence>
         {showForm && (
