@@ -398,14 +398,44 @@ export const getBacktestById = async (backtestId) => {
 
 export const saveSessionCapture = async (userId, sessionData) => {
   if (!firestore || !userId) return null;
-  const newSession = {
-    ...sessionData,
-    userId,
-    createdAt: new Date().toISOString(),
-    timestamp: Date.now()
-  };
-  const docRef = await addDoc(collection(firestore, SESSION_CAPTURES_COLLECTION), newSession);
-  return { id: docRef.id, ...newSession };
+  
+  try {
+    const { screenshots, ...rest } = sessionData;
+    const uploadedScreenshots = [];
+
+    // Upload each screenshot to Firebase Storage if it's a base64 string
+    for (const shot of screenshots) {
+      if (shot.image && shot.image.startsWith('data:image')) {
+        const storagePath = `sessions/${userId}/${Date.now()}-${shot.asset}-${shot.timeframe}.jpg`;
+        const storageRef = ref(storage, storagePath);
+        
+        // uploadString supports data_url format
+        await uploadString(storageRef, shot.image, 'data_url');
+        const downloadUrl = await getDownloadURL(storageRef);
+        
+        uploadedScreenshots.push({
+          ...shot,
+          image: downloadUrl
+        });
+      } else {
+          uploadedScreenshots.push(shot);
+      }
+    }
+
+    const newSession = {
+      ...rest,
+      screenshots: uploadedScreenshots,
+      userId,
+      createdAt: new Date().toISOString(),
+      timestamp: Date.now()
+    };
+    
+    const docRef = await addDoc(collection(firestore, SESSION_CAPTURES_COLLECTION), newSession);
+    return { id: docRef.id, ...newSession };
+  } catch (err) {
+    console.error('Error in saveSessionCapture:', err);
+    throw err;
+  }
 };
 
 export const getSessionCaptures = async (userId) => {
