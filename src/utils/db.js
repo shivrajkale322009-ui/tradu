@@ -411,9 +411,11 @@ export const saveSessionCapture = async (userId, sessionData) => {
 export const getSessionCaptures = async (userId) => {
   if (!firestore || !userId) return [];
   try {
-    const q = query(collection(firestore, SESSION_CAPTURES_COLLECTION), where('userId', '==', userId), orderBy('timestamp', 'desc'));
+    const q = query(collection(firestore, SESSION_CAPTURES_COLLECTION), where('userId', '==', userId));
     const snap = await getDocs(q);
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Sort manually to avoid composite index requirement
+    return data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   } catch (err) {
     console.error('Error getting session captures', err);
     return [];
