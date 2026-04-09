@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Records from './pages/Records';
 import Analytics from './pages/Analytics';
 import VisualCards from './pages/VisualCards';
+import Backtest from './pages/Backtest';
 import Login from './pages/Login';
 import Navigation from './components/Navigation';
 import MatrixBackground from './components/MatrixBackground';
@@ -36,6 +37,8 @@ function AppRoutes() {
           <Route path="/records" element={<Records />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/visuals" element={<VisualCards />} />
+          <Route path="/backtest" element={<Backtest />} />
+          <Route path="/backtest/:id" element={<Backtest />} />
         </Routes>
       </main>
     </div>

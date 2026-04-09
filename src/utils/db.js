@@ -6,6 +6,8 @@ const TRADES_COLLECTION = 'trades';
 const USERS_COLLECTION = 'users';
 const JOURNALS_COLLECTION = 'journals';
 const JOURNAL_ACCESS_COLLECTION = 'journalAccess';
+const BACKTESTS_COLLECTION = 'backtests';
+const BACKTEST_TRADES_COLLECTION = 'backtestTrades';
 
 /**
  * Fetches user-specific metadata and workstation preferences.
@@ -288,4 +290,104 @@ export const removeJournalAccess = async (accessId) => {
 
 export const renameJournal = async (journalId, newName) => {
   await setDoc(doc(firestore, JOURNALS_COLLECTION, journalId), { name: newName }, { merge: true });
+};
+
+// --- Backtest System Functions ---
+
+export const createBacktest = async (userId, backtestData) => {
+  if (!firestore || !userId) return null;
+  const newBacktest = {
+    ...backtestData,
+    userId,
+    createdAt: new Date().toISOString(),
+    timestamp: Date.now(),
+    tradesCount: 0,
+    netPnl: 0,
+    winRate: 0
+  };
+  const docRef = await addDoc(collection(firestore, BACKTESTS_COLLECTION), newBacktest);
+  return { id: docRef.id, ...newBacktest };
+};
+
+export const getBacktests = async (userId) => {
+  if (!firestore || !userId) return [];
+  try {
+    const q = query(collection(firestore, BACKTESTS_COLLECTION), where('userId', '==', userId), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (err) {
+    console.error('Error getting backtests', err);
+    return [];
+  }
+};
+
+export const deleteBacktest = async (backtestId) => {
+  if (!firestore || !backtestId) return;
+  try {
+    // Delete the backtest doc
+    await deleteDoc(doc(firestore, BACKTESTS_COLLECTION, backtestId));
+    
+    // Also delete all trades associated with this backtest
+    const q = query(collection(firestore, BACKTEST_TRADES_COLLECTION), where('backtestId', '==', backtestId));
+    const snap = await getDocs(q);
+    const deletePromises = snap.docs.map(d => deleteDoc(doc(firestore, BACKTEST_TRADES_COLLECTION, d.id)));
+    await Promise.all(deletePromises);
+  } catch (err) {
+    console.error('Error deleting backtest', err);
+  }
+};
+
+export const saveBacktestTrade = async (backtestId, tradeData) => {
+  if (!firestore || !backtestId) return null;
+  const newTrade = {
+    ...tradeData,
+    backtestId,
+    timestamp: Date.now(),
+    createdAt: new Date().toISOString()
+  };
+  const docRef = await addDoc(collection(firestore, BACKTEST_TRADES_COLLECTION), newTrade);
+  
+  // Update backtest statistics
+  await updateBacktestStats(backtestId);
+  
+  return { id: docRef.id, ...newTrade };
+};
+
+export const getBacktestTrades = async (backtestId) => {
+  if (!firestore || !backtestId) return [];
+  try {
+    const q = query(collection(firestore, BACKTEST_TRADES_COLLECTION), where('backtestId', '==', backtestId), orderBy('timestamp', 'asc'));
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (err) {
+    console.error('Error getting backtest trades', err);
+    return [];
+  }
+};
+
+export const updateBacktestStats = async (backtestId) => {
+  const trades = await getBacktestTrades(backtestId);
+  const totalTrades = trades.length;
+  if (totalTrades === 0) return;
+
+  const wins = trades.filter(t => Number(t.pnl) > 0).length;
+  const netPnl = trades.reduce((acc, t) => acc + Number(t.pnl), 0);
+  const winRate = (wins / totalTrades) * 100;
+
+  await setDoc(doc(firestore, BACKTESTS_COLLECTION, backtestId), {
+    tradesCount: totalTrades,
+    netPnl,
+    winRate,
+    lastActivity: new Date().toISOString()
+  }, { merge: true });
+};
+
+export const getBacktestById = async (backtestId) => {
+  if (!firestore || !backtestId) return null;
+  const docRef = doc(firestore, BACKTESTS_COLLECTION, backtestId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() };
+  }
+  return null;
 };
