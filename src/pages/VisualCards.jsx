@@ -12,6 +12,7 @@ export default function VisualCards() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, profit, loss
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date'); // date, pnl, asset, grade, strategy
 
   useEffect(() => {
     if (currentUser) {
@@ -30,14 +31,22 @@ export default function VisualCards() {
     setLoading(false);
   };
 
-  const filteredTrades = trades.filter(t => {
-    const matchesSearch = t.pair.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         t.strategy?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filter === 'all' || 
-                         (filter === 'profit' && Number(t.pnl) >= 0) || 
-                         (filter === 'loss' && Number(t.pnl) < 0);
-    return matchesSearch && matchesFilter;
-  });
+  const filteredAndSortedTrades = trades
+    .filter(t => {
+      const matchesSearch = t.pair.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                           t.strategy?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filter === 'all' || 
+                           (filter === 'profit' && Number(t.pnl) >= 0) || 
+                           (filter === 'loss' && Number(t.pnl) < 0);
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'pnl') return Number(b.pnl) - Number(a.pnl);
+      if (sortBy === 'asset') return a.pair.localeCompare(b.pair);
+      if (sortBy === 'strategy') return (a.strategy || '').localeCompare(b.strategy || '');
+      if (sortBy === 'grade') return (a.quality || 'B').localeCompare(b.quality || 'B');
+      return new Date(b.date) - new Date(a.date); // default by date decending
+    });
 
   if (loading) return <div className="page-container loading">INITIALIZING_VISUAL_TERMINAL...</div>;
 
@@ -69,19 +78,37 @@ export default function VisualCards() {
         </div>
       </header>
 
-      <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-         <Search size={18} className="text-muted" />
-         <input 
-           type="text" 
-           placeholder="Search session visuals..." 
-           className="input" 
-           value={searchTerm}
-           onChange={(e) => setSearchTerm(e.target.value)}
-           style={{ background: 'transparent', border: 'none', flex: 1 }}
-         />
+      <div className="glass-panel" style={{ padding: '1rem', marginBottom: '2rem', display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: '200px' }}>
+           <Search size={18} className="text-muted" />
+           <input 
+             type="text" 
+             placeholder="Search session visuals..." 
+             className="input" 
+             value={searchTerm}
+             onChange={(e) => setSearchTerm(e.target.value)}
+             style={{ background: 'transparent', border: 'none', flex: 1, outline: 'none' }}
+           />
+         </div>
+         
+         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+           <Filter size={16} className="text-primary" />
+           <select 
+             className="badge bg-muted" 
+             value={sortBy} 
+             onChange={(e) => setSortBy(e.target.value)}
+             style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', cursor: 'pointer', outline: 'none', padding: '0.4rem' }}
+           >
+             <option value="date">SORT_BY: DATE</option>
+             <option value="pnl">SORT_BY: PROFIT/LOSS</option>
+             <option value="asset">SORT_BY: ASSET</option>
+             <option value="grade">SORT_BY: GRADE</option>
+             <option value="strategy">SORT_BY: STRATEGY</option>
+           </select>
+         </div>
       </div>
 
-      {filteredTrades.length === 0 ? (
+      {filteredAndSortedTrades.length === 0 ? (
         <div className="empty-state" style={{ padding: '6rem 2rem' }}>
            <ImageIcon size={48} style={{ opacity: 0.1, marginBottom: '1.5rem' }} />
            <p style={{ color: 'var(--text-muted)' }}>No visual evidence found for this query.</p>
@@ -94,7 +121,7 @@ export default function VisualCards() {
           gap: '1.5rem' 
         }}>
           <AnimatePresence>
-            {filteredTrades.map((trade, idx) => (
+            {filteredAndSortedTrades.map((trade, idx) => (
               <motion.div
                 key={trade.id}
                 layout
