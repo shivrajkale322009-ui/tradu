@@ -180,20 +180,27 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const todayTrades = filteredTrades.filter(t => t.date === today);
+    const sourceArr = trades.length > 0 ? filteredTrades : globalArchive;
+    
+    const todayTrades = sourceArr.filter(t => t.date === today);
     const todayPnl = todayTrades.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
-    const wins = filteredTrades.filter(t => (Number(t.pnl) || 0) >= 0.5);
-    const losses = filteredTrades.filter(t => (Number(t.pnl) || 0) <= -0.5);
+    const wins = sourceArr.filter(t => (Number(t.pnl) || 0) >= 0.5);
+    const losses = sourceArr.filter(t => (Number(t.pnl) || 0) <= -0.5);
     const winRate = Math.round((wins.length / ((wins.length + losses.length) || 1)) * 100);
-    const totalPnl = filteredTrades.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
-    const pnlPoints = filteredTrades.slice(0, 7).reverse().map(t => ({ v: Number(t.pnl) || 0 }));
+    const totalPnl = sourceArr.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
+    const pnlPoints = sourceArr.slice(0, 7).reverse().map(t => ({ v: Number(t.pnl) || 0 }));
+    
+    // We also need true all-time PnL for balance
+    const allTimePnl = globalArchive.reduce((acc, t) => acc + (Number(t.pnl) || 0), 0);
     
     return { 
       winRate, totalPnl, todayPnl,
-      totalTrades: filteredTrades.length,
-      pnlPoints
+      totalTrades: sourceArr.length,
+      pnlPoints,
+      allTimePnl,
+      isGlobal: trades.length === 0 && globalArchive.length > 0
     };
-  }, [filteredTrades]);
+  }, [filteredTrades, globalArchive, trades.length]);
 
   const archiveSummary = useMemo(() => {
     const breakdown = {};
@@ -208,13 +215,14 @@ export default function Dashboard() {
   }, [globalArchive, masterChronological]);
 
   const chartData = useMemo(() => {
-    return filteredTrades.slice().reverse().reduce((acc, trade) => {
+    const source = trades.length > 0 ? filteredTrades : globalArchive;
+    return source.slice().reverse().reduce((acc, trade) => {
       const pnl = Number(trade.pnl || 0);
       const cumulative = acc.length > 0 ? acc[acc.length - 1].cumulative + pnl : pnl;
       acc.push({ date: trade.date, pnl: pnl, cumulative: cumulative, pair: trade.pair });
       return acc;
     }, []);
-  }, [filteredTrades]);
+  }, [filteredTrades, globalArchive, trades.length]);
 
   if (!currentUser) {
     return (
@@ -274,11 +282,11 @@ export default function Dashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
               <div className="metric-value">
-                <AnimatedCounter value={(userProfile?.capital || 0) + stats.totalPnl} prefix="$" decimals={2}/>
+                <AnimatedCounter value={(userProfile?.capital || 0) + stats.allTimePnl} prefix="$" decimals={2}/>
               </div>
               {userProfile?.capital > 0 && (
-                <div style={{ fontSize: '0.7rem', color: stats.totalPnl >= 0 ? 'var(--secondary)' : 'var(--danger)', marginTop: '0.2rem', fontWeight: 600 }}>
-                  {stats.totalPnl >= 0 ? '+' : ''}{((stats.totalPnl / userProfile.capital) * 100).toFixed(2)}% Growth
+                <div style={{ fontSize: '0.7rem', color: stats.allTimePnl >= 0 ? 'var(--secondary)' : 'var(--danger)', marginTop: '0.2rem', fontWeight: 600 }}>
+                  {stats.allTimePnl >= 0 ? '+' : ''}{((stats.allTimePnl / userProfile.capital) * 100).toFixed(2)}% All-Time PnL
                 </div>
               )}
             </div>
@@ -315,6 +323,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
             <h2 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <Activity size={18} className="text-primary"/> Performance Curve
+              {stats.isGlobal && <span className="badge" style={{ fontSize: '0.6rem', background: 'rgba(0, 240, 255, 0.1)', color: 'var(--primary)', borderColor: 'var(--primary)' }}>ACCOUNT_WIDE VIEW</span>}
             </h2>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               {['ALL', 'MONTH', 'WEEK'].map(f => (
@@ -323,7 +332,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div style={{ height: '280px', width: '100%', position: 'relative' }}>
-            {filteredTrades.length === 0 && (
+            {(trades.length === 0 && globalArchive.length === 0) && (
                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
                  No sessions recorded in this space yet.
                </div>
@@ -367,7 +376,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
           <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-            {filteredTrades.length === 0 && (
+            {(trades.length === 0 && globalArchive.length === 0) && (
                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.5)', color: 'var(--text-muted)', fontSize: '0.8rem', borderRadius: 'inherit', zIndex: 10 }}>
                  Awaiting Data
                </div>
