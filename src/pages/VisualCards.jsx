@@ -12,7 +12,10 @@ export default function VisualCards() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, profit, loss
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('date'); // date, pnl, asset, grade, strategy
+  const [sortBy, setSortBy] = useState('date');
+  const [selectedAsset, setSelectedAsset] = useState('all');
+  const [selectedGrade, setSelectedGrade] = useState('all');
+  const [selectedStrategy, setSelectedStrategy] = useState('all');
 
   useEffect(() => {
     if (currentUser) {
@@ -26,10 +29,14 @@ export default function VisualCards() {
     setLoading(true);
     const profile = await getUserProfile(currentUser.uid);
     const data = await getTrades(profile?.activeJournalId || currentUser.uid);
-    // Only show trades that actually HAVE an image (Visual Intelligence)
     setTrades(data.filter(t => t.image));
     setLoading(false);
   };
+
+  // Extract unique options for dropdowns
+  const uniqueAssets = [...new Set(trades.map(t => t.pair))].sort();
+  const uniqueGrades = [...new Set(trades.map(t => (t.quality || 'B').toUpperCase()))].sort();
+  const uniqueStrategies = [...new Set(trades.map(t => t.strategy || 'RAW_ACTION'))].sort();
 
   const filteredAndSortedTrades = trades
     .filter(t => {
@@ -38,14 +45,19 @@ export default function VisualCards() {
       const matchesFilter = filter === 'all' || 
                            (filter === 'profit' && Number(t.pnl) >= 0) || 
                            (filter === 'loss' && Number(t.pnl) < 0);
-      return matchesSearch && matchesFilter;
+      
+      const matchesAsset = selectedAsset === 'all' || t.pair === selectedAsset;
+      const matchesGrade = selectedGrade === 'all' || (t.quality || 'B').toUpperCase() === selectedGrade;
+      const matchesStrategy = selectedStrategy === 'all' || (t.strategy || 'RAW_ACTION') === selectedStrategy;
+
+      return matchesSearch && matchesFilter && matchesAsset && matchesGrade && matchesStrategy;
     })
     .sort((a, b) => {
       if (sortBy === 'pnl') return Number(b.pnl) - Number(a.pnl);
       if (sortBy === 'asset') return a.pair.localeCompare(b.pair);
       if (sortBy === 'strategy') return (a.strategy || '').localeCompare(b.strategy || '');
       if (sortBy === 'grade') return (a.quality || 'B').localeCompare(b.quality || 'B');
-      return new Date(b.date) - new Date(a.date); // default by date decending
+      return new Date(b.date) - new Date(a.date);
     });
 
   if (loading) return <div className="page-container loading">INITIALIZING_VISUAL_TERMINAL...</div>;
@@ -91,20 +103,53 @@ export default function VisualCards() {
            />
          </div>
          
-         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-           <Filter size={16} className="text-primary" />
+         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+           {/* Asset Filter */}
            <select 
              className="badge bg-muted" 
-             value={sortBy} 
-             onChange={(e) => setSortBy(e.target.value)}
+             value={selectedAsset} 
+             onChange={(e) => setSelectedAsset(e.target.value)}
              style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', cursor: 'pointer', outline: 'none', padding: '0.4rem' }}
            >
-             <option value="date">SORT_BY: DATE</option>
-             <option value="pnl">SORT_BY: PROFIT/LOSS</option>
-             <option value="asset">SORT_BY: ASSET</option>
-             <option value="grade">SORT_BY: GRADE</option>
-             <option value="strategy">SORT_BY: STRATEGY</option>
+             <option value="all">ALL_ASSETS</option>
+             {uniqueAssets.map(asset => <option key={asset} value={asset}>{asset}</option>)}
            </select>
+
+           {/* Grade Filter */}
+           <select 
+             className="badge bg-muted" 
+             value={selectedGrade} 
+             onChange={(e) => setSelectedGrade(e.target.value)}
+             style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', cursor: 'pointer', outline: 'none', padding: '0.4rem' }}
+           >
+             <option value="all">ALL_GRADES</option>
+             {uniqueGrades.map(grade => <option key={grade} value={grade}>{grade}</option>)}
+           </select>
+
+           {/* Strategy Filter */}
+           <select 
+             className="badge bg-muted" 
+             value={selectedStrategy} 
+             onChange={(e) => setSelectedStrategy(e.target.value)}
+             style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', cursor: 'pointer', outline: 'none', padding: '0.4rem' }}
+           >
+             <option value="all">ALL_STRATEGIES</option>
+             {uniqueStrategies.map(strat => <option key={strat} value={strat}>{strat}</option>)}
+           </select>
+
+           {/* Sort Option */}
+           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginLeft: '0.5rem', borderLeft: '1px solid var(--border)', paddingLeft: '1rem' }}>
+             <Filter size={14} className="text-primary" />
+             <select 
+               className="badge bg-muted" 
+               value={sortBy} 
+               onChange={(e) => setSortBy(e.target.value)}
+               style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', outline: 'none', fontSize: '0.65rem' }}
+             >
+               <option value="date">SORT: DATE</option>
+               <option value="pnl">SORT: P/L</option>
+             </select>
+           </div>
          </div>
       </div>
 
