@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+
 import { Lock, Shield, Activity, Mail, Key, ArrowRight, AlertCircle, Maximize } from 'lucide-react';
 
 export default function Login() {
@@ -149,7 +149,7 @@ export default function Login() {
         </div>
 
         <div style={styles.branding}>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+          <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
               <div style={styles.logoIcon}>
                 <Activity size={32} color="var(--primary)" />
@@ -159,7 +159,7 @@ export default function Login() {
             <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: '400px', lineHeight: 1.6 }}>
               The elite trading terminal for professionals. Track, analyze, and scale your strategy.
             </p>
-          </motion.div>
+          </div>
         </div>
 
         <div style={styles.trustBadges}>
@@ -176,10 +176,7 @@ export default function Login() {
 
       {/* RIGHT PANEL: LOGIN FORM */}
       <div className="split-right" style={styles.rightPanel}>
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }} 
-          animate={{ opacity: 1, x: 0 }} 
-          transition={{ duration: 0.6, delay: 0.2 }}
+        <div 
           style={styles.loginCard}
         >
           <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
@@ -188,10 +185,10 @@ export default function Login() {
           </div>
 
           {error && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="glass-panel" style={styles.errorBox}>
+            <div className="glass-panel" style={styles.errorBox}>
               <AlertCircle size={18} />
               <span>{error}</span>
-            </motion.div>
+            </div>
           )}
 
           <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -265,7 +262,7 @@ export default function Login() {
             </svg>
             Continue with Google
           </button>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Camera, Plus, History, Activity } from 'lucide-react';
 import SessionCaptureList from '../components/backtest/SessionCaptureList';
 import SessionCaptureForm from '../components/backtest/SessionCaptureForm';
@@ -39,15 +39,13 @@ export default function Backtest() {
             </div>
           </div>
           
-          <motion.button 
-            whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)' }}
-            whileTap={{ scale: 0.95 }}
+          <button 
             onClick={() => setShowCaptureForm(true)}
             className="btn-primary"
             style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.8rem 1.75rem', fontWeight: 800 }}
           >
             <Plus size={18} /> ADD_SESSION
-          </motion.button>
+          </button>
         </div>
       </header>
 
@@ -73,37 +71,25 @@ export default function Backtest() {
             <p style={{ color: 'var(--text-muted)', maxWidth: '400px', fontSize: '0.85rem', lineHeight: '1.6' }}>
               Document your trading sessions with multi-timeframe screenshots for later review and optimization.
             </p>
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button 
               onClick={() => setShowCaptureForm(true)}
               className="btn-primary"
               style={{ marginTop: '1.5rem', padding: '0.8rem 2.5rem' }}
             >
               ADD_SESSION
-            </motion.button>
+            </button>
           </div>
         )} />
       </div>
 
-      <AnimatePresence>
-        {showCaptureForm && (
+      {showCaptureForm && (
           <SessionCaptureForm
             onClose={() => setShowCaptureForm(false)}
             onSave={() => window.location.reload()} 
           />
         )}
-      </AnimatePresence>
       
-      <style>{`
-        .page-container {
-          animation: fadeIn 0.5s ease-out;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+
     </div>
   );
 }

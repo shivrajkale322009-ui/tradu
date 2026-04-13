@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
+
 import { 
   TrendingUp, TrendingDown, Target, Wallet, 
   BarChart3, Activity, AlertTriangle, Zap 
@@ -10,10 +10,9 @@ import {
 } from 'recharts';
 
 const StatCard = ({ title, value, subtext, icon: Icon, color = 'var(--primary)' }) => (
-  <motion.div 
-    whileHover={{ y: -5, boxShadow: `0 0 20px ${color}33` }}
-    className="glass-panel" 
-    style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden' }}
+  <div 
+    className="glass-panel stat-card-hover" 
+    style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden', transition: 'transform 0.2s, box-shadow 0.2s' }}
   >
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
       <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em' }}>{title.toUpperCase()}</div>
@@ -23,7 +22,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, color = 'var(--primary)' 
     </div>
     <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fff' }}>{value}</div>
     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{subtext}</div>
-  </motion.div>
+  </div>
 );
 
 export default function BacktestDashboard({ backtest, trades }) {
@@ -135,7 +134,7 @@ export default function BacktestDashboard({ backtest, trades }) {
                   stroke="var(--primary)" 
                   fill="url(#equityGradient)" 
                   strokeWidth={2}
-                  animationDuration={1500}
+                  isAnimationActive={false}
                 />
               </AreaChart>
             </ResponsiveContainer>

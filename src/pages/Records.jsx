@@ -3,7 +3,6 @@ import { getTrades, deleteTrade, getUserProfile } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, Calendar, TrendingUp, TrendingDown, Clock, Search, Maximize2, Minimize2, Download, X, Filter } from 'lucide-react';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 export default function Records() {
   const { currentUser } = useAuth();
@@ -14,6 +13,7 @@ export default function Records() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isWide, setIsWide] = useState(() => localStorage.getItem('recordsWide') === 'true');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' or 'asc'
+  const [statusFilter, setStatusFilter] = useState('executed'); // 'executed', 'missed'
 
   useEffect(() => {
     localStorage.setItem('recordsWide', isWide);
@@ -88,12 +88,19 @@ export default function Records() {
     });
   }, [trades, sortOrder]);
 
-  const filteredTrades = sortedTrades.filter(t => 
-    t.pair?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    t.strategy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.date?.includes(searchTerm) ||
-    t.time?.includes(searchTerm)
-  );
+  const filteredTrades = sortedTrades.filter(t => {
+    const matchesSearch = 
+      t.pair?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      t.strategy?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.date?.includes(searchTerm);
+    
+    const matchesStatus = 
+      statusFilter === 'all' || 
+      (statusFilter === 'executed' && !t.isMissed) || 
+      (statusFilter === 'missed' && t.isMissed);
+      
+    return matchesSearch && matchesStatus;
+  });
 
   if (loading) return <div className="page-container loading">Accessing Records...</div>;
 
@@ -106,119 +113,135 @@ export default function Records() {
         <h1 style={{ margin: 0, flex: 1 }}>Trade Archives</h1>
       </header>
 
-      <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '2rem' }}>
-        <div style={{ position: 'relative' }}>
+      <div className="glass-panel" style={{ padding: '0.75rem 1.25rem', marginBottom: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: 1 }}>
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder="Search by pair, strategy, or date..." 
+            placeholder="Search assets, strategies..." 
             className="input"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ paddingLeft: '3rem' }}
+            style={{ paddingLeft: '3rem', border: 'none', background: 'transparent' }}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: '0.5rem', borderLeft: '1px solid var(--border)', paddingLeft: '1.5rem' }}>
+           {[
+             { id: 'executed', label: 'Live History' },
+             { id: 'missed', label: 'Missed Ops' }
+           ].map(status => (
+             <button 
+               key={status.id}
+               onClick={() => {
+                 setSearchTerm(''); // Clear search when switching tabs
+                 setStatusFilter(status.id);
+               }}
+               style={{ 
+                 padding: '0.4rem 1.25rem', 
+                 fontSize: '0.65rem', 
+                 borderRadius: '6px',
+                 background: statusFilter === status.id ? 'var(--primary)' : 'rgba(255,255,255,0.03)',
+                 color: statusFilter === status.id ? '#000' : 'var(--text-muted)',
+                 border: statusFilter === status.id ? 'none' : '1px solid var(--border)',
+                 fontWeight: 800,
+                 cursor: 'pointer',
+                 textTransform: 'uppercase',
+                 letterSpacing: '0.05em'
+               }}
+             >
+               {status.label}
+             </button>
+           ))}
+        </div>
+      </div>
+
+      <div
+        className="glass-panel" 
+        style={{ position: 'relative' }}
+        onDoubleClick={() => setIsExpanded(true)}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.25rem', paddingBottom: 0 }}>
+          <h2 className="panel-title" style={{ margin: 0 }}>Full History Record</h2>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button className="icon-btn text-muted" title="Export CSV" onClick={exportToCSV}>
+              <Download size={18} />
+            </button>
+            <button 
+              className={`icon-btn ${isWide ? 'text-primary' : 'text-muted'}`} 
+              title={isWide ? "Narrow View" : "Expand Width"}
+              onClick={() => setIsWide(!isWide)}
+            >
+              <Maximize2 size={18} style={{ transform: isWide ? 'rotate(90deg)' : 'none' }} />
+            </button>
+            <button 
+              className="icon-btn text-muted" 
+              title="Focus Mode"
+              onClick={() => setIsExpanded(true)}
+            >
+              <Filter size={18} />
+            </button>
+          </div>
+        </div>
+        
+        <div style={{ padding: isWide ? '1.5rem 2.5rem' : '1.25rem', overflowX: 'auto' }}>
+          <TradeTable 
+            isWide={isWide}
+            trades={filteredTrades} 
+            onDelete={handleDelete} 
+            onNavigate={navigate}
+            sortOrder={sortOrder}
+            onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+            masterChronological={masterChronological}
           />
         </div>
       </div>
 
-      <LayoutGroup>
-        <motion.div 
-          layoutId="record-panel"
-          className="glass-panel" 
-          style={{ position: 'relative' }}
-          onDoubleClick={() => setIsExpanded(true)}
+      {isExpanded && (
+        <div 
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            background: '#050a19', zIndex: 9999,
+            display: 'flex', flexDirection: 'column'
+          }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1.25rem', paddingBottom: 0 }}>
-            <h2 className="panel-title" style={{ margin: 0 }}>Full History Record</h2>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="icon-btn text-muted" title="Export CSV" onClick={exportToCSV}>
-                <Download size={18} />
+          <div style={{ 
+            padding: '1.5rem 2rem', 
+            borderBottom: '1px solid rgba(0, 240, 255, 0.1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+              <h1 style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.1rem' }}>TERMINAL_ARCHIVE</h1>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', paddingTop: '0.3rem' }}>
+                {filteredTrades.length} ENTRIES COLLECTED
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button className="btn-secondary" style={{ padding: '0.5rem 1rem' }} onClick={exportToCSV}>
+                <Download size={18} /> EXPORT_CSV
               </button>
-              <button 
-                className={`icon-btn ${isWide ? 'text-primary' : 'text-muted'}`} 
-                title={isWide ? "Narrow View" : "Expand Width"}
-                onClick={() => setIsWide(!isWide)}
-              >
-                <Maximize2 size={18} style={{ transform: isWide ? 'rotate(90deg)' : 'none' }} />
-              </button>
-              <button 
-                className="icon-btn text-muted" 
-                title="Focus Mode"
-                onClick={() => setIsExpanded(true)}
-              >
-                <Filter size={18} />
+              <button className="icon-btn" onClick={() => setIsExpanded(false)}>
+                <X size={24} />
               </button>
             </div>
           </div>
-          
-          <motion.div 
-            animate={{ padding: isWide ? '1.5rem 2.5rem' : '1.25rem' }}
-            style={{ overflowX: 'auto' }}
-          >
-            <TradeTable 
-              isWide={isWide}
-              trades={filteredTrades} 
-              onDelete={handleDelete} 
-              onNavigate={navigate}
-              sortOrder={sortOrder}
-              onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-              masterChronological={masterChronological}
-            />
-          </motion.div>
-        </motion.div>
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div 
-              layoutId="record-panel"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              style={{
-                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                background: '#050a19', zIndex: 9999,
-                display: 'flex', flexDirection: 'column'
-              }}
-            >
-              <div style={{ 
-                padding: '1.5rem 2rem', 
-                borderBottom: '1px solid rgba(0, 240, 255, 0.1)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                  <h1 style={{ margin: 0, fontSize: '1.5rem', letterSpacing: '0.1rem' }}>TERMINAL_ARCHIVE</h1>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', paddingTop: '0.3rem' }}>
-                    {filteredTrades.length} ENTRIES COLLECTED
-                  </div>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <button className="btn-secondary" style={{ padding: '0.5rem 1rem' }} onClick={exportToCSV}>
-                    <Download size={18} /> EXPORT_CSV
-                  </button>
-                  <button className="icon-btn" onClick={() => setIsExpanded(false)}>
-                    <X size={24} />
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
-                <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-                  <TradeTable 
-                    isExpanded={true}
-                    trades={filteredTrades}
-                    onDelete={handleDelete}
-                    onNavigate={navigate}
-                    sortOrder={sortOrder}
-                    onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
-                    masterChronological={masterChronological}
-                  />
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </LayoutGroup>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+            <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+              <TradeTable 
+                isExpanded={true}
+                trades={filteredTrades}
+                onDelete={handleDelete}
+                onNavigate={navigate}
+                sortOrder={sortOrder}
+                onToggleSort={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                masterChronological={masterChronological}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -243,15 +266,9 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
       </tr>
     </thead>
     <tbody>
-      <AnimatePresence mode="popLayout">
         {trades.map((trade, idx) => (
-          <motion.tr 
+          <tr 
             key={trade.id} 
-            layout
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3, delay: idx * 0.015 }}
             onClick={() => onNavigate(`/trade/${trade.id}`)}
             style={{ 
               cursor: 'pointer',
@@ -301,9 +318,15 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
               </span>
             </td>
             <td style={{ textAlign: 'right' }}>
-              <div className={Math.abs(Number(trade.pnl)) < 0.5 ? 'glow-text-warning' : (Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger')} style={{ fontSize: (isExpanded || isWide) ? '1.2rem' : '1rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <div>{Number(trade.pnl) >= 0 ? '▲' : '▼'} {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}</div>
-                {Math.abs(Number(trade.pnl)) < 0.5 && <span className="badge bg-warning" style={{ fontSize: '0.64rem', padding: '0.15rem 0.6rem', marginTop: '0.2rem' }}>C2C_SESSION</span>}
+              <div className={trade.isMissed ? 'text-muted' : (Math.abs(Number(trade.pnl)) < 0.5 ? 'glow-text-warning' : (Number(trade.pnl) >= 0 ? 'glow-text-success' : 'glow-text-danger'))} style={{ fontSize: (isExpanded || isWide) ? '1.2rem' : '1rem', fontWeight: 700, display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                {trade.isMissed ? (
+                  <div className="badge bg-warning" style={{ fontSize: '0.65rem' }}>MISSED_OPP</div>
+                ) : (
+                  <>
+                    <div>{Number(trade.pnl) >= 0 ? '▲' : '▼'} {Number(trade.pnl) >= 0 ? '+' : ''}${Math.abs(Number(trade.pnl)).toFixed(2)}</div>
+                    {Math.abs(Number(trade.pnl)) < 0.5 && <span className="badge bg-warning" style={{ fontSize: '0.64rem', padding: '0.15rem 0.6rem', marginTop: '0.2rem' }}>C2C_SESSION</span>}
+                  </>
+                )}
               </div>
             </td>
             <td style={{ textAlign: 'center' }}>
@@ -314,9 +337,8 @@ const TradeTable = ({ trades, onDelete, onNavigate, isExpanded, isWide, sortOrde
                 <Eye size={18} />
               </div>
             </td>
-          </motion.tr>
+          </tr>
         ))}
-      </AnimatePresence>
       {trades.length === 0 && (
         <tr><td colSpan="7" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>ARCHIVE_EMPTY // NO_RECORDS_FOUND</td></tr>
       )}

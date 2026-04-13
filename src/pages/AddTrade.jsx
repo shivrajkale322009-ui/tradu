@@ -1,16 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { saveTrade, getUserProfile } from '../utils/db';
-import { ImagePlus, X, AlertCircle, ShieldCheck, Database, Cpu, Zap, Check, ArrowRight, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { 
+  ImagePlus, X, AlertCircle, ShieldCheck, Database, Cpu, Zap, Check, 
+  ArrowRight, TrendingUp, TrendingDown, DollarSign, Clock, Shield, 
+  Target, Info, Camera, Play, CheckCircle2, AlertTriangle, ListChecks,
+  Activity, ArrowUpRight, Ban, Eye, MousePointer2
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { soundEngine } from '../utils/SoundEngine';
 
 const SaveHUD = ({ progress, status, tradeData }) => {
   const [typedText, setTypedText] = useState('');
   const [flickerVal, setFlickerVal] = useState('0');
-  const hudControls = useAnimation();
   const processingRef = useRef(null);
 
   const sequences = [
@@ -27,7 +30,6 @@ const SaveHUD = ({ progress, status, tradeData }) => {
       setTimeout(() => soundEngine.playWhoosh(), 100);
       processingRef.current = soundEngine.playProcessing();
 
-      // Typing effect
       let charIdx = 0;
       let seqIdx = 0;
       const typeInterval = setInterval(() => {
@@ -60,122 +62,24 @@ const SaveHUD = ({ progress, status, tradeData }) => {
       exit={{ opacity: 0 }}
       style={{
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        background: 'rgba(5, 10, 25, 0.95)',
+        background: 'rgba(5, 10, 25, 0.98)',
         zIndex: 9999,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        backdropFilter: 'blur(15px)',
+        backdropFilter: 'blur(20px)',
         padding: '2rem', textAlign: 'center',
         overflow: 'hidden'
       }}
     >
-      {/* Background HUD Grid */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, 
-        backgroundImage: 'radial-gradient(rgba(0, 240, 255, 0.1) 1px, transparent 1px)', 
-        backgroundSize: '30px 30px', opacity: 0.2, pointerEvents: 'none' }} />
+        backgroundImage: 'radial-gradient(var(--primary-glow) 1px, transparent 1px)', 
+        backgroundSize: '40px 40px', opacity: 0.1, pointerEvents: 'none' }} />
       
-      {/* Scanning Line */}
-      {status === 'syncing' && (
-        <motion.div 
-          animate={{ y: ['0%', '100%'] }} 
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-          style={{ position: 'absolute', left: 0, right: 0, height: '2px', background: 'var(--primary)', opacity: 0.1, boxShadow: '0 0 10px var(--primary-glow)', zIndex: 1 }}
-        />
-      )}
-
-      {/* Main HUD Module */}
-      <motion.div animate={hudControls} style={{ position: 'relative', marginBottom: '2.5rem', zIndex: 10 }}>
-        {/* Outer hud ring */}
-        <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            style={{ position: 'relative', width: '200px', height: '200px' }}
-        >
-          {/* Outer dashed ring */}
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            style={{ 
-              position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-              border: `1px dashed ${status === 'success' ? 'var(--success)' : 'var(--primary)'}`, 
-              borderRadius: '50%',
-              opacity: 0.4
-            }}
-          />
-          
-          {/* Inner solid ring */}
-          <motion.div
-            animate={{ rotate: -360 }}
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-            style={{ 
-              position: 'absolute', top: '15px', left: '15px', right: '15px', bottom: '15px',
-              border: `2px solid ${status === 'success' ? 'var(--success)' : 'rgba(0, 240, 255, 0.2)'}`, 
-              borderRadius: '50%',
-              boxShadow: status === 'success' ? '0 0 30px var(--success-glow)' : '0 0 15px var(--primary-glow)'
-            }}
-          />
-
-          {/* Radar Sweep */}
-          {status !== 'success' && (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'conic-gradient(from 0deg, var(--primary) 0deg, transparent 60deg)', borderRadius: '50%', opacity: 0.1 }}
-            />
-          )}
-
-          {/* Center Content */}
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <AnimatePresence mode="wait">
-              {status === 'success' ? (
-                <motion.div 
-                  key="check" 
-                  initial={{ scale: 0, rotate: -45 }} 
-                  animate={{ scale: 1.2, rotate: 0 }} 
-                  transition={{ type: 'spring' }}
-                >
-                  <Check size={70} className="text-success" style={{ filter: 'drop-shadow(0 0 15px var(--success-glow))' }} />
-                </motion.div>
-              ) : (
-                <motion.div 
-                   key="core" 
-                   initial={{ opacity: 0 }} 
-                   animate={{ opacity: 1 }}
-                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
-                >
-                   <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
-                     <Cpu size={60} className="text-primary" />
-                   </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          
-          {/* Orbital Data Particles */}
-          {status !== 'success' && [...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 3 + i, repeat: Infinity, ease: "linear" }}
-              style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            >
-              <div style={{ 
-                width: '4px', height: '4px', background: 'var(--primary)', 
-                borderRadius: '50%', position: 'absolute', top: '-2px', left: '50%',
-                boxShadow: '0 0 8px var(--primary)'
-              }} />
-            </motion.div>
-          ))}
-        </motion.div>
-      </motion.div>
-
-      {/* Boot Text & Progress */}
-      <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left' }}>
-         <div style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: status === 'success' ? 'var(--success)' : 'var(--primary)', marginBottom: '1rem', minHeight: '1.2rem', letterSpacing: '0.05em' }}>
+      <div style={{ width: '100%', maxWidth: '400px', textAlign: 'left', zIndex: 10 }}>
+         <div style={{ fontFamily: 'monospace', fontSize: '0.9rem', color: status === 'success' ? 'var(--success)' : 'var(--primary)', marginBottom: '1.5rem', letterSpacing: '0.1em' }}>
             {typedText}<motion.span animate={{ opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 0.5 }}>_</motion.span>
          </div>
          
-         <div style={{ width: '100%', background: 'rgba(0, 240, 255, 0.05)', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '1.5rem', position: 'relative', border: '1px solid rgba(0, 240, 255, 0.1)' }}>
+         <div style={{ width: '100%', background: 'rgba(255,255,255,0.05)', height: '10px', borderRadius: '5px', overflow: 'hidden', border: '1px solid rgba(0, 240, 255, 0.2)' }}>
             <motion.div 
                animate={{ width: `${progress}%` }}
                style={{ 
@@ -183,42 +87,70 @@ const SaveHUD = ({ progress, status, tradeData }) => {
                   background: status === 'success' ? 'var(--success)' : 'linear-gradient(90deg, var(--primary), var(--secondary))', 
                   boxShadow: status === 'success' ? '0 0 20px var(--success-glow)' : '0 0 15px var(--primary-glow)' 
                }}
-            >
-               {/* Moving highlight streak */}
-               <motion.div 
-                  animate={{ x: ['-100%', '400%'] }} 
-                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  style={{ width: '30%', height: '100%', background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)' }}
-               />
-            </motion.div>
+            />
          </div>
 
-         {status === 'success' && tradeData && (
+         {status === 'success' && (
            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              style={{ marginTop: '2rem', textAlign: 'center' }}
            >
-              <div className="badge bg-success" style={{ padding: '0.5rem 1rem', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 0 15px var(--success-glow)' }}>
-                 +${Number(tradeData.pnl).toFixed(2)} SECURED
+              <div className="badge bg-success" style={{ padding: '0.75rem 1.5rem', fontSize: '1rem' }}>
+                 SESSION_DATA_ARCHIVED
               </div>
            </motion.div>
          )}
       </div>
-
-      {/* Terminal Metadata Footer */}
-      <div style={{ position: 'absolute', bottom: '2rem', display: 'flex', gap: '3rem', opacity: 0.4, fontFamily: 'monospace', fontSize: '0.6rem' }}>
-         <div>PROTOCOL: SAVE_TRADU_v1</div>
-         <div>SECURITY: AES_256</div>
-         <div>HASH: {flickerVal}</div>
-      </div>
     </motion.div>
+  );
+};
+
+const ChecklistItem = ({ label, checked, onToggle }) => (
+  <div className={`checklist-item ${checked ? 'checked' : ''}`} onClick={onToggle}>
+    <div className="checklist-checkbox">
+      {checked && <Check size={14} className="text-white" />}
+    </div>
+    <span className="checklist-text">{label}</span>
+  </div>
+);
+
+const MistakeSelector = ({ selected, onToggle }) => {
+  const mistakes = [
+    { id: 'no_conf', label: 'No Confirmation' },
+    { id: 'early', label: 'Early Entry' },
+    { id: 'fomo', label: 'FOMO' },
+    { id: 'overtrading', label: 'Overtrading' },
+    { id: 'anti_trend', label: 'Against Trend' },
+    { id: 'no_checklist', label: 'No Checklist' }
+  ];
+
+  return (
+    <div className="mistake-grid">
+      {mistakes.map(m => (
+        <div 
+          key={m.id} 
+          className={`mistake-tag ${selected.includes(m.id) ? 'selected' : ''}`}
+          onClick={() => onToggle(m.id)}
+        >
+          {m.label}
+        </div>
+      ))}
+    </div>
   );
 };
 
 export default function AddTrade() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  
+  // App Logic State
+  const [isPrepared, setIsPrepared] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [prepareStartTime, setPrepareStartTime] = useState(null);
+  const [isMissedTrade, setIsMissedTrade] = useState(false);
+  
+  // Form State
   const [formData, setFormData] = useState({
     pair: 'BTC/USDT',
     type: 'long',
@@ -226,112 +158,85 @@ export default function AddTrade() {
     entry: '',
     lots: '0.01',
     date: new Date().toISOString().slice(0, 10),
-    time: new Date().toISOString().slice(11, 16), // HH:mm format in UTC
+    time: new Date().toISOString().slice(11, 16),
     strategy: '',
     emotion: 'neutral',
-    quality: 'a1',
-    notes: ''
+    quality: 'b', // Default to B
+    notes: '',
+    trend: 'range',
+    reasonMissed: '' // For missed trades
   });
-  const [imagePreview, setImagePreview] = useState(null);
-  const [favouritePairs, setFavouritePairs] = useState(['BTC/USDT', 'ETH/USDT', 'SOL/USDT']);
-  const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
-  const [isCustomPair, setIsCustomPair] = useState(false);
+
+  const [checklist, setChecklist] = useState({
+    sr: false,
+    confirmation: false,
+    liquidity: false,
+    mtf: false
+  });
+
+  const [selectedMistakes, setSelectedMistakes] = useState([]);
+  const [images, setImages] = useState({
+    before: null,
+    after: null
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState('syncing');
-  const [twelveDataKey, setTwelveDataKey] = useState('');
-  const [userTimezone, setUserTimezone] = useState('+00:00');
   const [userRole, setUserRole] = useState('owner');
+  const [strategies, setStrategies] = useState(['Breakout', 'Scalping', 'Momentum']);
+  const [favouritePairs, setFavouritePairs] = useState(['BTC/USDT', 'ETH/USDT', 'SOL/USDT']);
+
+  // Timer Effect
+  useEffect(() => {
+    let timer;
+    if (isPrepared && countdown > 0) {
+      timer = setInterval(() => {
+        setCountdown(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [isPrepared, countdown]);
 
   useEffect(() => {
     if (currentUser) {
       getUserProfile(currentUser.uid).then(profile => {
         if (profile) {
-          if (profile.favouritePairs && profile.favouritePairs.length > 0) {
-            setFavouritePairs(profile.favouritePairs);
-            if (formData.pair === 'BTC/USDT' || !formData.pair) {
-              setFormData(prev => ({ ...prev, pair: profile.favouritePairs[0] }));
-            }
-          }
-          if (profile.strategies && profile.strategies.length > 0) {
-            setStrategies(profile.strategies);
-            setFormData(prev => ({ ...prev, strategy: profile.strategies[0] }));
-          }
-          if (profile.twelveDataKey) {
-            setTwelveDataKey(profile.twelveDataKey);
-          }
-          if (profile.timezone) {
-            setUserTimezone(profile.timezone);
-          }
-          if (profile.activeJournalRole) {
-            setUserRole(profile.activeJournalRole);
-          }
+          if (profile.strategies && profile.strategies.length > 0) setStrategies(profile.strategies);
+          if (profile.favouritePairs && profile.favouritePairs.length > 0) setFavouritePairs(profile.favouritePairs);
+          if (profile.activeJournalRole) setUserRole(profile.activeJournalRole);
         }
       });
     }
   }, [currentUser]);
 
-  if (!currentUser) {
-    return (
-      <div className="page-container empty-state" style={{marginTop: '2rem'}}>
-        <AlertCircle size={40} style={{marginBottom: '1rem', color: 'var(--danger)'}} />
-        <h2>Authentication Required</h2>
-        <p>You must be signed in to add new trades.</p>
-        <button onClick={() => navigate('/')} className="btn-primary" style={{marginTop: '1rem'}}>Go Home</button>
-      </div>
-    );
-  }
+  const handleToggleChecklist = (key) => {
+    setChecklist(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
-  if (userRole === 'viewer') {
-    return (
-      <div className="page-container empty-state" style={{marginTop: '2rem'}}>
-        <ShieldCheck size={40} style={{marginBottom: '1rem', color: 'var(--secondary)'}} />
-        <h2>Access Restricted</h2>
-        <p>You have View Only access to this trading space. Log into an owned space to append trades.</p>
-        <button onClick={() => navigate('/')} className="btn-primary" style={{marginTop: '1rem'}}>Go Home</button>
-      </div>
+  const handleToggleMistake = (id) => {
+    setSelectedMistakes(prev => 
+      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
     );
-  }
+  };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = (e, type) => {
     const file = e.target.files[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        alert('Please upload an image file');
-        return;
-      }
-
       const reader = new FileReader();
       reader.onload = (event) => {
         const img = new Image();
         img.onload = () => {
-          // Set a max dimension (e.g. 1024px) for trading screenshots
-          const MAX_WIDTH = 1024;
-          const MAX_HEIGHT = 1024;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
           const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          // Get compressed base64 (jpeg is smaller than png)
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-          setImagePreview(dataUrl);
+          const MAX_SIZE = 1200;
+          let w = img.width;
+          let h = img.height;
+          if (w > h && w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; }
+          else if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; }
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          setImages(prev => ({ ...prev, [type]: canvas.toDataURL('image/jpeg', 0.8) }));
         };
         img.src = event.target.result;
       };
@@ -339,366 +244,269 @@ export default function AddTrade() {
     }
   };
 
-  const removeImage = () => {
-    setImagePreview(null);
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'pairSelect') {
-      if (value === 'CUSTOM') {
-        setIsCustomPair(true);
-        setFormData(prev => ({ ...prev, pair: '' }));
-      } else {
-        setIsCustomPair(false);
-        setFormData(prev => ({ ...prev, pair: value }));
-      }
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleEmotionSelect = (emotionValue) => {
-    setFormData(prev => ({ ...prev, emotion: emotionValue }));
+  const startPrepare = () => {
+    setIsPrepared(true);
+    setCountdown(30);
+    setPrepareStartTime(Date.now());
+    soundEngine.playTap();
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.pair || !formData.pnl) {
-      alert('Pair and PnL are required!');
-      return;
-    }
     
+    // Validation
+    const checklistComplete = Object.values(checklist).every(v => v === true);
+    if (!formData.quality && !isMissedTrade) {
+        alert("Please select trade quality.");
+        return;
+    }
+
     setIsSubmitting(true);
     setSyncStatus('syncing');
-    
-    // Start progress simulation
+
+    let currentProgress = 0;
     const interval = setInterval(() => {
-      setSyncProgress(prev => {
-        if (prev >= 90) return prev; // Hold at 90 until done
-        return prev + 10;
-      });
-    }, 40);
+      currentProgress += 10;
+      setSyncProgress(Math.min(currentProgress, 95));
+    }, 50);
 
     try {
-      const profile = await getUserProfile(currentUser.uid);
-      await saveTrade({
+      const impulsive = (Date.now() - (prepareStartTime || 0)) < 30000;
+      const finalQuality = !checklistComplete ? 'd' : formData.quality;
+      
+      const tradeToSave = {
         ...formData,
-        pnl: Number(formData.pnl),
-        image: imagePreview
-      }, currentUser.uid, profile?.activeJournalId || currentUser.uid);
+        checklist,
+        mistakes: selectedMistakes,
+        images,
+        isImpulsive: impulsive,
+        isMissed: isMissedTrade,
+        pnl: Number(formData.pnl) || 0,
+        quality: finalQuality,
+        timestamp: Date.now()
+      };
+
+      await saveTrade(tradeToSave, currentUser.uid);
 
       clearInterval(interval);
       setSyncProgress(100);
       setSyncStatus('success');
-      
-      // Hold success screen for 0.8 seconds so they can see the effect
-      setTimeout(() => {
-        navigate('/');
-      }, 800);
-    } catch (error) {
+      setTimeout(() => navigate('/'), 1000);
+    } catch (err) {
       clearInterval(interval);
       setIsSubmitting(false);
-      console.error(error);
-      alert('Could not save trade: ' + error.message);
+      alert("Error: " + err.message);
     }
   };
 
+  if (!currentUser) return <div className="page-container">Access Denied</div>;
+
   return (
-    <div className="page-container">
-      <header className="header" style={{ marginBottom: '1.5rem' }}>
-        <h1>Log New Trade</h1>
+    <div className="page-container" style={{ paddingBottom: '5rem' }}>
+      <header className="header" style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem' }}>{isMissedTrade ? 'Log Missed Trade' : 'Live Trade Entry'}</h1>
+          <p className="text-muted" style={{ fontSize: '0.85rem' }}>Precision journal protocol active.</p>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button 
+            className={`btn-outline ${!isMissedTrade ? 'active' : ''}`}
+            onClick={() => setIsMissedTrade(false)}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', borderColor: !isMissedTrade ? 'var(--primary)' : '' }}
+          >
+            EXECUTED
+          </button>
+          <button 
+            className={`btn-outline ${isMissedTrade ? 'active' : ''}`}
+            onClick={() => setIsMissedTrade(true)}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.75rem', borderColor: isMissedTrade ? 'var(--secondary)' : '' }}
+          >
+            MISSED
+          </button>
+        </div>
       </header>
-      
-      <form onSubmit={handleSubmit} className="trade-form responsive-grid">
-        <div className="form-group grid-full">
-          <label>Pair/Ticker</label>
-          {!isCustomPair ? (
-            <select
-              name="pairSelect"
-              value={formData.pair}
-              onChange={handleChange}
-              className="input"
-              required
-            >
-              {favouritePairs.map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-              <option value="CUSTOM">+ Custom Pair...</option>
-            </select>
-          ) : (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <input
-                type="text"
-                name="pair"
-                value={formData.pair}
-                onChange={handleChange}
-                placeholder="e.g. BTC/USDT"
-                className="input"
-                required
-                autoComplete="off"
-                style={{ flex: 1, textTransform: 'uppercase' }}
-              />
-              <button 
-                type="button" 
-                onClick={() => {
-                  setIsCustomPair(false);
-                  setFormData(prev => ({ ...prev, pair: favouritePairs[0] || '' }));
-                }}
-                className="btn-outline"
-                style={{ padding: '0 0.75rem' }}
-              >
-                <X size={18} />
-              </button>
+
+      <form onSubmit={handleSubmit} className="trade-form">
+          <div className="compact-grid">
+            {/* Left Column: Preparation & Checklist */}
+            <div className="form-column">
+              {!isMissedTrade && (
+                <>
+                  <div className="form-section-header"><ListChecks size={16}/> Pre-Trade Checklist</div>
+                  {!isPrepared ? (
+                    <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', marginBottom: '1.5rem', borderStyle: 'dashed' }}>
+                      <Shield size={32} className="text-muted" style={{ marginBottom: '1rem' }} />
+                      <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1.5rem' }}>Impulse control active. Start preparation to unlock trade entry.</p>
+                      <button type="button" className="btn-primary" style={{ width: '100%' }} onClick={startPrepare}>
+                        <Clock size={18} /> PREPARE_TRADE (30s)
+                      </button>
+                    </div>
+                  ) : countdown > 0 ? (
+                    <div className="timer-hud">
+                      <div className="timer-value">{countdown}s</div>
+                      <div className="timer-label">Stabilizing Emotions...</div>
+                    </div>
+                  ) : (
+                    <div className="glass-panel" style={{ padding: '1rem', background: 'rgba(0, 243, 255, 0.05)', borderColor: 'var(--primary)', textAlign: 'center', marginBottom: '1.5rem' }}>
+                      <CheckCircle2 size={24} className="text-secondary" style={{ marginBottom: '0.5rem' }} />
+                      <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.9rem' }}>STATUS: READY_FOR_EXECUTION</div>
+                    </div>
+                  )}
+
+                  <div className="checklist-container">
+                    <ChecklistItem label="S/R or Trendline marked" checked={checklist.sr} onToggle={() => handleToggleChecklist('sr')} />
+                    <ChecklistItem label="Multiple timeframe analysis" checked={checklist.mtf} onToggle={() => handleToggleChecklist('mtf')} />
+                    <ChecklistItem label="Is swing break?" checked={checklist.confirmation} onToggle={() => handleToggleChecklist('confirmation')} />
+                    <ChecklistItem label="Any trap there?" checked={checklist.liquidity} onToggle={() => handleToggleChecklist('liquidity')} />
+                  </div>
+
+                  {!Object.values(checklist).every(v => v === true) && isPrepared && (
+                    <div className="behavior-warning">
+                      <AlertTriangle size={18} />
+                      Checklist incomplete – High risk trade
+                    </div>
+                  )}
+                </>
+              )}
+
+              <div className="form-section-header"><Camera size={16}/> Evidence Capture</div>
+              <div className="compact-grid" style={{ gap: '0.75rem' }}>
+                 <div className="image-upload-container">
+                   <label className="image-upload-box" style={{ height: '100px', fontSize: '0.7rem' }}>
+                     {images.before ? <img src={images.before} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><ImagePlus size={20}/> BEFORE_ENTRY</>}
+                     <input type="file" onChange={(e) => handleImageChange(e, 'before')} className="hidden-input" accept="image/*" />
+                   </label>
+                 </div>
+                 <div className="image-upload-container">
+                   <label className="image-upload-box" style={{ height: '100px', fontSize: '0.7rem' }}>
+                     {images.after ? <img src={images.after} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <><Eye size={20}/> AFTER_RESULT</>}
+                     <input type="file" onChange={(e) => handleImageChange(e, 'after')} className="hidden-input" accept="image/*" />
+                   </label>
+                 </div>
+              </div>
             </div>
-          )}
-        </div>
 
-        <div className="form-group-row-responsive">
-          <div className="form-group flex-1">
-            <label>Trade Type</label>
-            <select name="type" value={formData.type} onChange={handleChange} className="input">
-              <option value="long">Long</option>
-              <option value="short">Short</option>
-            </select>
-          </div>
-          <div className="form-group flex-1">
-            <label>Entry Price</label>
-            <input
-              type="number"
-              step="any"
-              name="entry"
-              value={formData.entry}
-              onChange={handleChange}
-              placeholder="e.g. 68450.00"
-              className="input"
-              required
-            />
-          </div>
-          <div className="form-group flex-1">
-            <label>Position Size (Lots)</label>
-            <input
-              type="number"
-              step="0.01"
-              name="lots"
-              value={formData.lots}
-              onChange={handleChange}
-              className="input"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="form-group-row-responsive">
-          <div className="form-group flex-1">
-            <label>Date</label>
-            <input
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              className="input"
-              required
-            />
-          </div>
-          <div className="form-group flex-1">
-            <label>Time</label>
-            <input
-              type="time"
-              name="time"
-              value={formData.time}
-              onChange={handleChange}
-              className="input"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="form-group-row-responsive">
-          <div className="form-group flex-1">
-            <label>Profit/Loss ($)</label>
-            <input
-              type="number"
-              step="any"
-              name="pnl"
-              value={formData.pnl}
-              onChange={handleChange}
-              placeholder="e.g. 150.50"
-              className="input"
-              required
-            />
-          </div>
-          <div className="form-group flex-1">
-            <label>Strategy / Setup</label>
-            <select
-              name="strategy"
-              value={formData.strategy}
-              onChange={handleChange}
-              className="input"
-            >
-              {strategies.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="form-group grid-full">
-          <label>Grade / Quality</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
-            {['a1', 'b', 'c', 'd'].map(q => (
-              <button
-                key={q}
-                type="button"
-                onClick={() => setFormData(prev => ({ ...prev, quality: q }))}
-                className="btn-outline"
-                style={{
-                  padding: '0.6rem 0.2rem',
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  fontWeight: 800,
-                  border: formData.quality === q ? '1px solid var(--primary)' : '1px solid var(--border)',
-                  background: formData.quality === q ? 'rgba(0, 240, 255, 0.1)' : 'var(--surface-light)',
-                  color: formData.quality === q ? 'var(--primary)' : 'var(--text-muted)'
-                }}
-              >
-                {q}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group grid-full">
-          <label>Emotional State</label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-            {[
-              { id: 'confident', label: 'Confident 😎', color: 'var(--success)' },
-              { id: 'fear', label: 'Fear 😨', color: 'var(--text-muted)' },
-              { id: 'greedy', label: 'Greedy 🤑', color: 'var(--danger)' }
-            ].map(emo => (
-              <button
-                key={emo.id}
-                type="button"
-                onClick={() => handleEmotionSelect(emo.id)}
-                className="btn-outline"
-                style={{
-                  padding: '0.75rem 0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.25rem',
-                  fontSize: '0.85rem',
-                  border: formData.emotion === emo.id ? `1px solid ${emo.color}` : '1px solid var(--border)',
-                  background: formData.emotion === emo.id ? `rgba(255, 255, 255, 0.1)` : 'var(--surface-light)',
-                  boxShadow: formData.emotion === emo.id ? `0 0 10px ${emo.color}33` : 'none',
-                  color: formData.emotion === emo.id ? emo.color : 'var(--text-primary)'
-                }}
-              >
-                {emo.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="form-group grid-full">
-          <label>Notes / Lessons</label>
-          <textarea
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            placeholder="What did you learn from this trade?"
-            className="input textarea"
-            rows={4}
-          ></textarea>
-        </div>
-
-        <div className="form-group grid-full">
-          <label>Chart Image</label>
-          <div className="image-upload-container">
-            {!imagePreview ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <label htmlFor="chart-image" className="image-upload-box" style={{ height: '110px' }}>
-                  <ImagePlus size={24} />
-                  <span style={{ fontSize: '0.75rem' }}>Upload Image</span>
-                  <input
-                    type="file"
-                    id="chart-image"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden-input"
-                  />
-                </label>
-                <label htmlFor="camera-image" className="image-upload-box" style={{ height: '110px', borderColor: 'var(--secondary)', color: 'var(--secondary)' }}>
-                  <Zap size={24} />
-                  <span style={{ fontSize: '0.75rem' }}>Take Photo</span>
-                  <input
-                    type="file"
-                    id="camera-image"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleImageChange}
-                    className="hidden-input"
-                  />
-                </label>
+            {/* Right Column: Trade Details */}
+            <div className="form-column">
+              <div className="form-section-header"><Zap size={16}/> Execution Intel</div>
+              
+              <div className="compact-grid">
+                <div className="form-group">
+                  <label>Pair</label>
+                  <select value={formData.pair} onChange={(e) => setFormData({...formData, pair: e.target.value})} className="input">
+                    {favouritePairs.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Strategy</label>
+                  <select value={formData.strategy} onChange={(e) => setFormData({...formData, strategy: e.target.value})} className="input">
+                    {strategies.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
               </div>
-            ) : (
-              <div className="image-preview-wrapper">
-                <img src={imagePreview} alt="Chart Preview" className="image-preview" />
-                <button type="button" onClick={removeImage} className="remove-image-btn">
-                  <X size={16} />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
 
-        <motion.button 
-          whileHover={{ scale: 1.02, boxShadow: '0 0 20px var(--primary-glow)' }}
-          whileTap={{ scale: 0.95, background: 'var(--primary-dark)' }}
-          type="submit" 
-          disabled={isSubmitting} 
-          className="btn-primary" 
-          style={{ width: '100%', marginTop: '1rem', position: 'relative', overflow: 'hidden' }}
-        >
-          <AnimatePresence mode="wait">
-            {!isSubmitting ? (
-              <motion.div 
-                key="save"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
+              <div className="compact-grid">
+                <div className="form-group">
+                  <label>Trend</label>
+                  <select value={formData.trend} onChange={(e) => setFormData({...formData, trend: e.target.value})} className="input">
+                    <option value="up">UP TREND</option>
+                    <option value="down">DOWN TREND</option>
+                    <option value="range">RANGING</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Type</label>
+                  <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="input">
+                    <option value="long">LONG</option>
+                    <option value="short">SHORT</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group-row-responsive">
+                <div className="form-group flex-1">
+                  <label>Entry Price</label>
+                  <input type="number" step="any" value={formData.entry} onChange={(e) => setFormData({...formData, entry: e.target.value})} className="input" />
+                </div>
+                <div className="form-group flex-1">
+                  <label>Lots</label>
+                  <input type="number" step="0.01" value={formData.lots} onChange={(e) => setFormData({...formData, lots: e.target.value})} className="input" />
+                </div>
+              </div>
+
+              <div className="form-section-header"><Target size={16}/> Outcome Analytics</div>
+
+              <div className="form-group">
+                <label>PnL ($)</label>
+                <input type="number" step="any" value={formData.pnl} onChange={(e) => setFormData({...formData, pnl: e.target.value})} className="input" placeholder="0.00" />
+              </div>
+
+              <div className="form-group">
+                <label>Grade Trade</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.4rem' }}>
+                  {['a1', 'a', 'b', 'c'].map(q => (
+                    <button
+                      key={q} type="button" onClick={() => setFormData({...formData, quality: q})}
+                      className="btn-outline"
+                      style={{ 
+                        fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase',
+                        background: formData.quality === q ? 'var(--primary-glow)' : '',
+                        borderColor: formData.quality === q ? 'var(--primary)' : '',
+                        color: formData.quality === q ? 'var(--primary)' : ''
+                      }}
+                    >
+                      {q === 'a1' ? 'A+' : q.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {isMissedTrade && (
+                <div className="form-group">
+                  <label>Reason Missed</label>
+                  <select value={formData.reasonMissed} onChange={(e) => setFormData({...formData, reasonMissed: e.target.value})} className="input">
+                    <option value="">-- SELECT REASON --</option>
+                    <option value="not_noticed">DIDN'T NOTICE</option>
+                    <option value="hesitation">HESITATION</option>
+                    <option value="no_confidence">NO CONFIDENCE</option>
+                    <option value="distraction">DISTRACTION</option>
+                  </select>
+                </div>
+              )}
+
+              {!isMissedTrade && (
+                <>
+                  <div className="form-section-header"><Ban size={16}/> Mistake Tracking</div>
+                  <MistakeSelector selected={selectedMistakes} onToggle={handleToggleMistake} />
+                </>
+              )}
+
+              <div className="form-group" style={{ marginTop: '1.5rem' }}>
+                <label>Post-Trade Notes</label>
+                <textarea 
+                  value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} 
+                  className="input textarea" placeholder="Market behavior, feeling, lesson learned..." rows={3}
+                ></textarea>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={isSubmitting || (isPrepared && countdown > 0)} 
+                className="btn-primary" 
+                style={{ width: '100%', marginTop: '1.5rem', height: '3.5rem', fontSize: '1rem' }}
               >
-                <Zap size={18} /> Save Trade
-              </motion.div>
-            ) : syncStatus === 'success' ? (
-              <motion.div 
-                key="done"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1.2 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--success)' }}
-              >
-                <Check size={20} /> Success
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}
-              >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                >
-                  <Cpu size={18} />
-                </motion.div>
-                Processing...
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.button>
-      </form>
+                {isSubmitting ? 'CHRONICLING...' : (countdown > 0 && isPrepared ? `WAITING... (${countdown}S)` : 'ARCHIVE_SESSION')}
+              </button>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
+                {isPrepared && (Date.now() - prepareStartTime < 30000) && <div className="behavior-badge badge-impulsive"><Ban size={12}/> IMPULSIVE_ENTRY</div>}
+                {!Object.values(checklist).every(v => v === true) && <div className="behavior-badge badge-low-quality"><AlertTriangle size={12}/> LOW_QUALITY_DATA</div>}
+                {formData.quality === 'a1' && <div className="behavior-badge badge-a-plus"><Shield size={12}/> A+ SETUP</div>}
+              </div>
+            </div>
+          </div>
+        </form>
 
       <AnimatePresence>
         {isSubmitting && <SaveHUD progress={syncProgress} status={syncStatus} tradeData={formData} />}

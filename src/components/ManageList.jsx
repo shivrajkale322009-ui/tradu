@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Search, GripVertical, ChevronDown, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 export default function ManageList({ title, icon: Icon, items, onAdd, onRemove, onEdit, onReorder, placeholder }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -56,14 +56,8 @@ export default function ManageList({ title, icon: Icon, items, onAdd, onRemove, 
         </button>
       </div>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            style={{ overflow: 'hidden' }}
-          >
+      {isOpen && (
+          <div style={{ overflow: 'hidden' }}>
             <div style={{ paddingTop: '1rem' }}>
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexDirection: 'row', alignItems: 'stretch' }}>
                 <form onSubmit={handleAdd} style={{ display: 'flex', flex: 1, position: 'relative' }}>
@@ -142,9 +136,8 @@ export default function ManageList({ title, icon: Icon, items, onAdd, onRemove, 
                 )}
               </div>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

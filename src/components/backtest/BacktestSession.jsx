@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { 
   ChevronLeft, Play, Pause, SkipForward, Plus, 
   Layout, History, BarChart3, Save, X, 
@@ -267,12 +267,9 @@ export default function BacktestSession({ backtest, onBack }) {
         )}
       </div>
 
-      <AnimatePresence>
-        {showTradeModal && (
+      {showTradeModal && (
             <div className="modal-overlay" onClick={() => setShowTradeModal(false)}>
-                <motion.div 
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
+                <div 
                     className="modal-content glass-panel"
                     style={{ maxWidth: '400px' }}
                     onClick={e => e.stopPropagation()}
@@ -318,10 +315,9 @@ export default function BacktestSession({ backtest, onBack }) {
 
                         <button type="submit" className="btn-primary" style={{ width: '100%' }}>EXECUTE_TRADE</button>
                     </form>
-                </motion.div>
+                </div>
             </div>
         )}
-      </AnimatePresence>
 
       <style>{`
         .session-container {

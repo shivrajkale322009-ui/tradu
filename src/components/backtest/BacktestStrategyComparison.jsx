@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+
 import { Target, Wallet, BarChart3, Zap, AlertTriangle } from 'lucide-react';
 
 export default function StrategyComparison({ backtests }) {

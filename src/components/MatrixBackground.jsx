@@ -10,11 +10,14 @@ const NeuralBackground = () => {
 
     let animationFrameId;
     let particles = [];
+    let lastFrameTime = 0;
+    const TARGET_FPS = 15; // Throttle to 15fps — barely noticeable for a background effect but saves massive CPU
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
     
-    // Config
-    const particleCount = 60;
-    const connectionDistance = 150;
-    const speed = 0.3;
+    // Config — reduced particle count significantly
+    const particleCount = 25; // Was 60
+    const connectionDistance = 120; // Was 150
+    const speed = 0.2; // Was 0.3
     let themeColor = '#64748b';
 
     const resizeCanvas = () => {
@@ -32,7 +35,7 @@ const NeuralBackground = () => {
           y: Math.random() * canvas.height,
           vx: (Math.random() - 0.5) * speed,
           vy: (Math.random() - 0.5) * speed,
-          radius: Math.random() * 2 + 1
+          radius: Math.random() * 1.5 + 0.5
         });
       }
     };
@@ -40,8 +43,13 @@ const NeuralBackground = () => {
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    const draw = () => {
-      // Clear with almost transparent background to allow trails or just clear rect
+    const draw = (timestamp) => {
+      animationFrameId = requestAnimationFrame(draw);
+      
+      // Throttle frame rate
+      if (timestamp - lastFrameTime < FRAME_INTERVAL) return;
+      lastFrameTime = timestamp;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       for (let i = 0; i < particleCount; i++) {
@@ -59,31 +67,31 @@ const NeuralBackground = () => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = themeColor;
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.4;
         ctx.fill();
 
-        // Connect particles
+        // Connect particles — only check nearby (skip most)
         for (let j = i + 1; j < particleCount; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+          const distSq = dx * dx + dy * dy;
 
-          if (dist < connectionDistance) {
+          if (distSq < connectionDistance * connectionDistance) {
+            const dist = Math.sqrt(distSq);
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.strokeStyle = themeColor;
-            ctx.globalAlpha = 0.2 * (1 - dist / connectionDistance);
+            ctx.globalAlpha = 0.15 * (1 - dist / connectionDistance);
             ctx.stroke();
           }
         }
       }
       
-      animationFrameId = requestAnimationFrame(draw);
     };
 
-    draw();
+    animationFrameId = requestAnimationFrame(draw);
 
     return () => {
       window.removeEventListener('resize', resizeCanvas);
@@ -101,7 +109,7 @@ const NeuralBackground = () => {
         width: '100%',
         height: '100%',
         zIndex: -1,
-        opacity: 0.2, // Neural grid is elegant, so opacity can be slightly visible
+        opacity: 0.15,
         pointerEvents: 'none'
       }}
     />

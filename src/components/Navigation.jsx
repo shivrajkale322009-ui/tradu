@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PlusCircle, Clock, User, BarChart2, Image as ImageIcon, Activity } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Clock, BarChart2, Image as ImageIcon, Activity } from 'lucide-react';
 
 export default function Navigation() {
   return (
@@ -35,10 +35,6 @@ export default function Navigation() {
       <NavLink to="/visuals" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
         <ImageIcon size={18} />
         <span>Visuals</span>
-      </NavLink>
-      <NavLink to="/profile" className={({ isActive }) => (isActive ? 'nav-item active' : 'nav-item')}>
-        <User size={18} />
-        <span>Terminal</span>
       </NavLink>
       
       <div className="desktop-only" style={{ marginTop: 'auto', padding: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>

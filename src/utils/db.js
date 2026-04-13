@@ -120,23 +120,29 @@ export const saveTrade = async (trade, userId, journalId) => {
   }
 };
 
-export const getTrades = async (journalId) => {
+export const getTrades = async (journalId, limitCount = 0) => {
   if (!firestore || !journalId) return [];
   try {
-    let docs = [];
+    // Parallel fetch for journalId and userId tags
     const q1 = query(collection(firestore, TRADES_COLLECTION), where('journalId', '==', journalId));
-    const snap1 = await getDocs(q1);
-    snap1.docs.forEach(doc => docs.push({ id: doc.id, ...doc.data(), image: doc.data().imageUrl }));
-    
     const q2 = query(collection(firestore, TRADES_COLLECTION), where('userId', '==', journalId));
-    const snap2 = await getDocs(q2);
-    snap2.docs.forEach(doc => {
-      if (!docs.find(d => d.id === doc.id)) {
-         docs.push({ id: doc.id, ...doc.data(), image: doc.data().imageUrl });
+    
+    const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+    
+    // Fast deduplication using Map
+    const tradeMap = new Map();
+    [...snap1.docs, ...snap2.docs].forEach(docSnap => {
+      if (!tradeMap.has(docSnap.id)) {
+        tradeMap.set(docSnap.id, { 
+          id: docSnap.id, 
+          ...docSnap.data(), 
+          image: docSnap.data().imageUrl 
+        });
       }
     });
 
-    return docs.sort((a, b) => b.timestamp - a.timestamp);
+    const data = Array.from(tradeMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return limitCount > 0 ? data.slice(0, limitCount) : data;
   } catch (err) {
     console.error('Error getting trades from Firebase', err);
     return [];
@@ -183,14 +189,15 @@ export const updateTrade = async (id, data) => {
 export const recoverySweep = async (userId) => {
   if (!firestore || !userId) return [];
   try {
-    // This query ignores journals and finds EVERYTHING owned by this UID
+    // For dashboard recovery, we only need the most recent data to provide context
+    // The full archive can be fetched on demand in the Records page
     const q = query(collection(firestore, TRADES_COLLECTION), where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       image: doc.data().imageUrl
-    }));
+    })).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   } catch (err) {
     console.error('CRITICAL_RECOVERY_FAILURE', err);
     return [];

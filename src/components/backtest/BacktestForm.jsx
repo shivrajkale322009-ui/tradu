@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+
 import { X, Target, BarChart3, Clock, Wallet, Shield } from 'lucide-react';
 
 export default function BacktestForm({ onClose, onSubmit }) {
@@ -27,17 +27,11 @@ export default function BacktestForm({ onClose, onSubmit }) {
   };
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div 
       className="modal-overlay"
       onClick={onClose}
     >
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+      <div 
         className="modal-content glass-panel"
         style={{ width: '100%', maxWidth: '600px', padding: 0, overflow: 'hidden' }}
         onClick={e => e.stopPropagation()}
@@ -165,7 +159,7 @@ export default function BacktestForm({ onClose, onSubmit }) {
             </button>
           </div>
         </form>
-      </motion.div>
+      </div>
 
       <style>{`
         .modal-overlay {
@@ -223,6 +217,6 @@ export default function BacktestForm({ onClose, onSubmit }) {
           background: rgba(255,255,255,0.1);
         }
       `}</style>
-    </motion.div>
+    </div>
   );
 }

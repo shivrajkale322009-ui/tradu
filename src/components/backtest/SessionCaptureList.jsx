@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Camera, Calendar, Clock, Trash2, Maximize2, X, ChevronRight, LayoutGrid, Eye, TrendingUp, BarChart3 } from 'lucide-react';
 import { getSessionCaptures, deleteSessionCapture } from '../../utils/db';
 import { useAuth } from '../../context/AuthContext';
@@ -59,27 +59,17 @@ export default function SessionCaptureList({ onEmpty, onStatsUpdate }) {
         });
     };
 
-    // Grouping logic
+    // Grouping by date string
     const groupedCaptures = useMemo(() => {
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        const yesterday = new Date(now);
-        yesterday.setDate(now.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-        const groups = {
-            TODAY: [],
-            YESTERDAY: [],
-            ARCHIVE: []
-        };
-
-        captures.forEach(c => {
-            if (c.date === todayStr) groups.TODAY.push(c);
-            else if (c.date === yesterdayStr) groups.YESTERDAY.push(c);
-            else groups.ARCHIVE.push(c);
+        const groups = {};
+        [...captures]
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .forEach(c => {
+            const dateLabel = formatDate(c.date);
+            if (!groups[dateLabel]) groups[dateLabel] = [];
+            groups[dateLabel].push(c);
         });
-
-        return Object.entries(groups).filter(([_, items]) => items.length > 0);
+        return Object.entries(groups);
     }, [captures]);
 
     if (loading) return (
@@ -101,80 +91,70 @@ export default function SessionCaptureList({ onEmpty, onStatsUpdate }) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', paddingBottom: '4rem' }}>
-            {groupedCaptures.map(([groupName, items]) => (
-                <div key={groupName}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
-                        <h2 style={{ fontSize: '0.75rem', color: 'var(--primary)', letterSpacing: '0.25em', margin: 0, fontWeight: 900 }}>{groupName}</h2>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, var(--primary)33, transparent)' }} />
+            {groupedCaptures.map(([dateLabel, items]) => (
+                <div key={dateLabel}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                        <div style={{ 
+                            fontSize: '0.9rem', 
+                            color: 'var(--primary)', 
+                            fontWeight: 900, 
+                            letterSpacing: '0.1em',
+                            background: 'rgba(0, 240, 255, 0.05)',
+                            padding: '0.4rem 1.25rem',
+                            borderRadius: '4px',
+                            border: '1px solid rgba(0, 240, 255, 0.1)'
+                        }}>
+                           {dateLabel.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, rgba(0, 240, 255, 0.1), transparent)' }} />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {items.map(session => (
-                            <motion.div
+                            <div
                                 key={session.id}
-                                whileHover={{ y: -8, scale: 1.02 }}
-                                layoutId={session.id}
                                 className="session-card glass-panel"
                                 style={{ 
                                     cursor: 'pointer', 
-                                    position: 'relative',
                                     border: '1px solid var(--border)',
-                                    background: 'rgba(255,255,255,0.02)',
-                                    overflow: 'hidden',
+                                    background: 'rgba(255,255,255,0.01)',
                                     display: 'flex',
-                                    flexDirection: 'column'
+                                    padding: '1rem',
+                                    gap: '1.5rem',
+                                    alignItems: 'center',
+                                    transition: 'all 0.2s ease'
                                 }}
                                 onClick={() => setSelectedSession(session)}
                             >
-                                {/* Header */}
-                                <div style={{ padding: '1.25rem 1.25rem 0.75rem 1.25rem' }}>
-                                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
-                                        {formatDate(session.date)}
-                                    </h3>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                                        <Clock size={10} className="text-muted" />
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                            {session.startTime} — {session.endTime}
-                                        </span>
+                                {/* Time & Basic Info */}
+                                <div style={{ width: '150px' }}>
+                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#fff' }}>
+                                        {session.startTime} — {session.endTime}
                                     </div>
+                                    <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontWeight: 600 }}>SESSION_DURATION</div>
                                 </div>
 
-                                {/* Asset Badges */}
-                                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', padding: '0 1.25rem', marginBottom: '1rem' }}>
+                                {/* Assets */}
+                                <div style={{ flex: 1, display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                                     {session.assets.map(a => (
-                                        <span key={a} className="badge bg-muted" style={{ fontSize: '0.55rem', padding: '0.2rem 0.5rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <span key={a} className="badge bg-muted" style={{ fontSize: '0.6rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                                             {a}
                                         </span>
                                     ))}
                                 </div>
 
-                                {/* Preview */}
-                                <div style={{ flex: 1, position: 'relative', margin: '0 0.5rem', borderRadius: '4px', overflow: 'hidden', minHeight: '160px', background: '#000' }}>
+                                {/* Thumbnail Preview */}
+                                <div style={{ width: '120px', height: '60px', borderRadius: '4px', overflow: 'hidden', background: '#000', border: '1px solid var(--border)' }}>
                                     {session.screenshots[0] && (
-                                        <img 
-                                            src={session.screenshots[0].image} 
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                        />
+                                        <img src={session.screenshots[0].image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     )}
-                                    {session.screenshots.length > 1 && (
-                                        <div style={{ position: 'absolute', bottom: '0.5rem', right: '0.5rem', background: 'rgba(0,0,0,0.8)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid var(--border)' }}>
-                                            <span style={{ fontSize: '0.6rem', fontWeight: 800 }}>+{session.screenshots.length - 1} MORE</span>
-                                        </div>
-                                    )}
-                                    
-                                    {/* Hover Actions */}
-                                    <div className="card-actions-overlay">
-                                        <div style={{ background: 'var(--primary)', color: '#000', padding: '0.5rem', borderRadius: '50%' }}>
-                                            <Eye size={18} />
-                                        </div>
-                                    </div>
                                 </div>
 
-                                {/* Footer */}
-                                <div style={{ padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <LayoutGrid size={12} className="text-primary" />
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.05em' }}>{session.screenshots.length} CAPTURES</span>
+                                {/* Stats & Actions */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 900, color: 'var(--primary)' }}>{session.screenshots.length}</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontWeight: 600 }}>CAPTURES</div>
                                     </div>
                                     <button 
                                         onClick={(e) => handleDelete(e, session.id)} 
@@ -184,20 +164,15 @@ export default function SessionCaptureList({ onEmpty, onStatsUpdate }) {
                                         <Trash2 size={14} />
                                     </button>
                                 </div>
-                            </motion.div>
+                            </div>
                         ))}
                     </div>
                 </div>
             ))}
 
-            <AnimatePresence>
                 {selectedSession && (
                     <div className="modal-overlay" onClick={() => setSelectedSession(null)} style={{ background: 'rgba(0,0,0,0.95)', zIndex: 1000 }}>
-                        <motion.div 
-                            initial={{ x: '100%', opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: '100%', opacity: 0 }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        <div 
                             className="glass-panel"
                             style={{ 
                                 position: 'absolute', top: 0, right: 0, width: '100%', maxWidth: '1000px', 
@@ -239,11 +214,8 @@ export default function SessionCaptureList({ onEmpty, onStatsUpdate }) {
 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(450px, 1fr))', gap: '2rem' }}>
                                     {selectedSession.screenshots.map((s, idx) => (
-                                        <motion.div 
+                                        <div 
                                             key={idx} 
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.1 }}
                                             className="glass-panel" 
                                             style={{ padding: '0.75rem', overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}
                                         >
@@ -260,19 +232,16 @@ export default function SessionCaptureList({ onEmpty, onStatsUpdate }) {
                                             >
                                                 <img src={s.image} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                             </div>
-                                        </motion.div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
                 )}
 
                 {zoomImage && (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                    <div 
                         className="modal-overlay"
                         style={{ zIndex: 9999, background: 'rgba(0,0,0,0.98)' }}
                         onClick={() => setZoomImage(null)}
@@ -280,15 +249,12 @@ export default function SessionCaptureList({ onEmpty, onStatsUpdate }) {
                         <button onClick={() => setZoomImage(null)} style={{ position: 'absolute', top: '2rem', right: '2rem', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', cursor: 'pointer', padding: '1rem', borderRadius: '50%' }}>
                             <X size={32} />
                         </button>
-                        <motion.img 
-                            initial={{ scale: 0.95 }}
-                            animate={{ scale: 1 }}
+                        <img 
                             src={zoomImage} 
                             style={{ maxWidth: '98vw', maxHeight: '95vh', objectFit: 'contain', borderRadius: '8px', boxShadow: '0 0 50px rgba(0,0,0,0.5)' }} 
                         />
-                    </motion.div>
+                    </div>
                 )}
-            </AnimatePresence>
 
             <style>{`
                 .session-card:hover .card-actions-overlay {

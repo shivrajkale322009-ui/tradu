@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { getTrades, deleteTrade, getUserProfile, recoverySweep } from '../utils/db';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
-  TrendingUp, TrendingDown, Trash2, LogIn, User, ArrowRight, Activity, 
+  TrendingUp, TrendingDown, Trash2, LogIn, ArrowRight, Activity, 
   Crosshair, Target, LayoutDashboard, Wallet, Clock, Shield, ArrowUpRight, Maximize2, Download, X, Database 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import JournalManager from '../components/JournalManager';
 
@@ -42,29 +41,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-const AnimatedCounter = ({ value, prefix = '', suffix = '', decimals = 0 }) => {
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useEffect(() => {
-    let startTime;
-    const duration = 1500;
-    const startValue = displayValue;
-    const endValue = value;
-
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = timestamp - startTime;
-      const t = Math.min(progress / duration, 1);
-      const easing = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-      const current = startValue + (endValue - startValue) * easing;
-      setDisplayValue(current);
-      if (t < 1) requestAnimationFrame(animate);
-    };
-
-    requestAnimationFrame(animate);
-  }, [value]);
-
-  const formatted = decimals > 0 ? displayValue.toFixed(decimals) : Math.round(displayValue);
+// Static display — no requestAnimationFrame loops
+const StaticValue = ({ value, prefix = '', suffix = '', decimals = 0 }) => {
+  const formatted = decimals > 0 ? Number(value).toFixed(decimals) : Math.round(value);
   const parts = formatted.toString().split(".");
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return <span>{prefix}{parts.join(".")}{suffix}</span>;
@@ -79,20 +58,41 @@ const CircularProgress = ({ value, size = 120, strokeWidth = 10, color = 'var(--
     <div style={{ position: 'relative', width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255, 255, 255, 0.1)" strokeWidth={strokeWidth} fill="none" />
-        <motion.circle
+        <circle
           cx={size / 2} cy={size / 2} r={radius} stroke={color} strokeWidth={strokeWidth} fill="none"
           strokeLinecap="round" strokeDasharray={circumference}
-          initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          style={{ filter: `drop-shadow(0 0 6px ${color})` }}
+          strokeDashoffset={offset}
+          style={{ transition: 'stroke-dashoffset 0.6s ease-out', filter: `drop-shadow(0 0 6px ${color})` }}
         />
       </svg>
       <div style={{ position: 'absolute', textAlign: 'center' }}>
-        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}><AnimatedCounter value={value} />%</div>
+        <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{Math.round(value)}%</div>
         <div style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Win Rate</div>
       </div>
     </div>
   );
+};
+
+// Cache keys
+const CACHE_KEY_TRADES = 'dashboard_trades_cache';
+const CACHE_KEY_ARCHIVE = 'dashboard_archive_cache';
+const CACHE_KEY_PROFILE = 'dashboard_profile_cache';
+const CACHE_TTL = 60000; // 1 minute cache
+
+const getCached = (key) => {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return data;
+  } catch { return null; }
+};
+
+const setCache = (key, data) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify({ data, ts: Date.now() }));
+  } catch { /* storage full, ignore */ }
 };
 
 export default function Dashboard() {
@@ -105,6 +105,7 @@ export default function Dashboard() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeJournal, setActiveJournal] = useState(null);
   const [globalArchive, setGlobalArchive] = useState([]);
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -117,16 +118,53 @@ export default function Dashboard() {
   }, [currentUser]);
 
   const loadProfile = async (userId) => {
-    const profile = await getUserProfile(userId);
-    setUserProfile(profile);
-    const fullArchive = await recoverySweep(userId);
-    if (fullArchive) setGlobalArchive(fullArchive);
+    // Immediate state recovery from session storage
+    const cachedProfile = getCached(CACHE_KEY_PROFILE);
+    const cachedArchive = getCached(CACHE_KEY_ARCHIVE);
+    
+    if (cachedProfile && !initialLoadDone.current) {
+      setUserProfile(cachedProfile);
+      if (cachedArchive) setGlobalArchive(cachedArchive);
+      initialLoadDone.current = true;
+    }
+
+    // Parallel fetch for fresh data
+    try {
+      const [profile, fullArchive] = await Promise.all([
+        getUserProfile(userId),
+        cachedArchive ? Promise.resolve(cachedArchive) : recoverySweep(userId)
+      ]);
+
+      setUserProfile(profile);
+      setCache(CACHE_KEY_PROFILE, profile);
+      
+      if (fullArchive) {
+        setGlobalArchive(fullArchive);
+        setCache(CACHE_KEY_ARCHIVE, fullArchive);
+      }
+    } catch (err) {
+      console.error("Dashboard_Sync_Error", err);
+    }
   };
 
   const loadTrades = async (id) => {
+    // Show cached trades instantly, then refresh in background
+    const cachedTrades = getCached(CACHE_KEY_TRADES + '_' + id);
+    if (cachedTrades) {
+      setTrades(cachedTrades);
+      // Background refresh (Async)
+      getTrades(id, 50).then(data => {
+        setTrades(data);
+        setCache(CACHE_KEY_TRADES + '_' + id, data);
+      });
+      return;
+    }
+
     setLoading(true);
-    const data = await getTrades(id);
+    // Limit dashboard view to 50 most recent records for speed
+    const data = await getTrades(id, 50);
     setTrades(data);
+    setCache(CACHE_KEY_TRADES + '_' + id, data);
     setLoading(false);
   };
 
@@ -246,17 +284,6 @@ export default function Dashboard() {
           </h1>
           <p className="text-muted" style={{ fontSize: '0.8rem' }}>Market terminal active and ready.</p>
         </div>
-        <Link to="/profile">
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', border: '2px solid var(--primary)', boxShadow: '0 0 8px var(--primary-glow)' }}>
-            {userProfile?.photoURL || currentUser.photoURL ? (
-              <img src={userProfile?.photoURL || currentUser.photoURL} alt="User" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: '100%', height: '100%', background: 'var(--surface-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <User size={24} className="text-primary" />
-              </div>
-            )}
-          </div>
-        </Link>
       </header>
 
       <div style={{ minHeight: '60px' }}>
@@ -282,7 +309,7 @@ export default function Dashboard() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
               <div className="metric-value">
-                <AnimatedCounter value={(userProfile?.capital || 0) + stats.allTimePnl} prefix="$" decimals={2}/>
+                <StaticValue value={(userProfile?.capital || 0) + stats.allTimePnl} prefix="$" decimals={2}/>
               </div>
               {userProfile?.capital > 0 && (
                 <div style={{ fontSize: '0.7rem', color: stats.allTimePnl >= 0 ? 'var(--secondary)' : 'var(--danger)', marginTop: '0.2rem', fontWeight: 600 }}>
@@ -297,7 +324,7 @@ export default function Dashboard() {
           <div className="metric-label"><TrendingUp size={14}/> Today PnL</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div className={`metric-value ${stats.todayPnl >= 0 ? 'glow-text-success' : 'glow-text-danger'}`}>
-              <AnimatedCounter value={stats.todayPnl} prefix={stats.todayPnl >= 0 ? '+$' : '-$'} decimals={2}/>
+              <StaticValue value={Math.abs(stats.todayPnl)} prefix={stats.todayPnl >= 0 ? '+$' : '-$'} decimals={2}/>
             </div>
             <Sparkline data={stats.pnlPoints.slice(-3)} color={stats.todayPnl >= 0 ? 'var(--success)' : 'var(--danger)'} />
           </div>
@@ -305,7 +332,7 @@ export default function Dashboard() {
         <div className="glass-panel metric-card">
           <div className="metric-label"><Target size={14}/> Win Rate</div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div className="metric-value glow-text-success"><AnimatedCounter value={stats.winRate}/>%</div>
+            <div className="metric-value glow-text-success">{stats.winRate}%</div>
             <Sparkline data={stats.pnlPoints.map(p => ({ v: p.v > 0 ? 1 : 0 }))} color="var(--success)" />
           </div>
         </div>
@@ -367,7 +394,7 @@ export default function Dashboard() {
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <ReferenceLine y={0} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
-                <Area type="monotone" dataKey="cumulative" stroke="var(--primary)" strokeWidth={2.5} fill="url(#colorCurve)" animationDuration={1500} />
+                <Area type="monotone" dataKey="cumulative" stroke="var(--primary)" strokeWidth={2.5} fill="url(#colorCurve)" isAnimationActive={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -407,8 +434,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <LayoutGroup>
-        <motion.div layoutId="journal-panel" className="glass-panel journal-container" onDoubleClick={() => setIsExpanded(true)}>
+      <div className="glass-panel journal-container" onDoubleClick={() => setIsExpanded(true)}>
           <h2 className="panel-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clock size={18}/> Trade Journal</div>
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
@@ -420,31 +446,28 @@ export default function Dashboard() {
           <div style={{ overflowX: 'auto' }}>
             <JournalTable trades={filteredTrades.slice(0, 10)} masterChronological={masterChronological} navigate={navigate} />
           </div>
-        </motion.div>
+        </div>
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div layoutId="journal-panel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#050a19', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <h1 style={{ margin: 0, fontSize: '1.25rem', letterSpacing: '0.1rem' }}>JOURNAL_FOCUS</h1>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', paddingTop: '0.3rem' }}>{filteredTrades.length} TOTAL SESSIONS</div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem' }} onClick={exportCSV}><Download size={16} /> EXPORT_DATA</button>
-                  <button className="icon-btn" onClick={() => setIsExpanded(false)}><X size={20} /></button>
-                </div>
+        {isExpanded && (
+          <div
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: '#050a19', zIndex: 9999, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid rgba(0, 240, 255, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.02)', backdropFilter: 'blur(10px)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <h1 style={{ margin: 0, fontSize: '1.25rem', letterSpacing: '0.1rem' }}>JOURNAL_FOCUS</h1>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', paddingTop: '0.3rem' }}>{filteredTrades.length} TOTAL SESSIONS</div>
               </div>
-              <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                  <JournalTable trades={filteredTrades} masterChronological={masterChronological} navigate={navigate} isExpanded={true} />
-                </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button className="btn-secondary" style={{ padding: '0.35rem 0.75rem' }} onClick={exportCSV}><Download size={16} /> EXPORT_DATA</button>
+                <button className="icon-btn" onClick={() => setIsExpanded(false)}><X size={20} /></button>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </LayoutGroup>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+              <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                <JournalTable trades={filteredTrades} masterChronological={masterChronological} navigate={navigate} isExpanded={true} />
+              </div>
+            </div>
+          </div>
+        )}
         </>
       )}
     </div>
@@ -464,10 +487,8 @@ const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => 
       </tr>
     </thead>
     <tbody>
-      <AnimatePresence mode="popLayout">
         {trades.map((trade, idx) => (
-          <motion.tr key={trade.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.4, delay: idx * 0.03 }} onClick={() => navigate(`/trade/${trade.id}`)} 
+          <tr key={trade.id} onClick={() => navigate(`/trade/${trade.id}`)} 
             style={{ cursor: 'pointer' }} className="row-glow"
           >
             <td style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.75rem', fontFamily: 'monospace' }}>
@@ -492,7 +513,7 @@ const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => 
             <td style={{ fontWeight: 600 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: isExpanded ? '1rem' : '0.9rem' }}>
                 {trade.pair}
-                {idx === 0 && !isExpanded && <motion.div animate={{ opacity: [0, 1, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />}
+                {idx === 0 && !isExpanded && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)' }} />}
               </div>
             </td>
             <td><span className={`badge ${(trade.type || 'long') === 'long' ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '0.7rem' }}>{trade.type?.toUpperCase()}</span></td>
@@ -501,9 +522,8 @@ const JournalTable = ({ trades, masterChronological, navigate, isExpanded }) => 
               {Math.abs(Number(trade.pnl)) < 0.5 && <span className="badge bg-warning" style={{ fontSize: '0.64rem', padding: '0.15rem 0.6rem' }}>C2C_SESSION</span>}
             </td>
             <td><ArrowUpRight size={16} className="text-muted"/></td>
-          </motion.tr>
+          </tr>
         ))}
-      </AnimatePresence>
       {trades.length === 0 && (
         <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center', opacity: 0.5 }}>Initial sequence required. No records found.</td></tr>
       )}

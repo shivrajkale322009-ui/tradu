@@ -11,6 +11,7 @@ import VisualCards from './pages/VisualCards';
 import Backtest from './pages/Backtest';
 import Login from './pages/Login';
 import Navigation from './components/Navigation';
+import ProfileDropdown from './components/ProfileDropdown';
 import MatrixBackground from './components/MatrixBackground';
 import ErrorBoundary from './components/ErrorBoundary';
 import SystemLoader from './components/SystemLoader';
@@ -28,6 +29,7 @@ function AppRoutes() {
     <div className="app-layout">
       <MatrixBackground />
       <Navigation />
+      <ProfileDropdown />
       <main className="main-content">
         <Routes>
           <Route path="/" element={<Dashboard />} />

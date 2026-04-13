@@ -7,7 +7,7 @@ import {
   Filter, TrendingUp, TrendingDown, Trash2, Share2, 
   X, ChevronRight, LayoutGrid, Calendar
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 
 export default function VisualCards() {
   const { currentUser } = useAuth();
@@ -240,15 +240,9 @@ export default function VisualCards() {
           gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
           gap: '1rem' 
         }}>
-          <AnimatePresence>
             {filteredAndSortedTrades.map((trade, idx) => (
-              <motion.div
+              <div
                 key={trade.id}
-                layout
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.02 }}
-                transition={{ duration: 0.2, ease: "easeOut" }}
                 onClick={() => setSelectedImage(trade.image)}
                 className="glass-panel visual-card"
                 style={{ 
@@ -256,7 +250,8 @@ export default function VisualCards() {
                   cursor: 'pointer', 
                   background: 'rgba(255, 255, 255, 0.02)',
                   border: '1px solid rgba(255, 255, 255, 0.05)',
-                  position: 'relative'
+                  position: 'relative',
+                  transition: 'transform 0.2s, box-shadow 0.2s'
                 }}
               >
                 {/* Image Wrap */}
@@ -295,19 +290,14 @@ export default function VisualCards() {
                    </div>
                    <ChevronRight size={12} className="text-muted" style={{ opacity: 0.5 }} />
                 </div>
-              </motion.div>
+              </div>
             ))}
-          </AnimatePresence>
         </div>
       )}
 
       {/* Fullscreen Overlay */}
-      <AnimatePresence>
-        {selectedImage && (
-            <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+      {selectedImage && (
+            <div 
                 className="modal-overlay"
                 style={{ zIndex: 9999, background: 'rgba(0,0,0,0.95)' }}
                 onClick={() => setSelectedImage(null)}
@@ -315,15 +305,12 @@ export default function VisualCards() {
                 <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 10000 }}>
                     <button onClick={() => setSelectedImage(null)} className="icon-btn-secondary" style={{ width: '40px', height: '40px' }}><X size={24} /></button>
                 </div>
-                <motion.img 
-                    initial={{ scale: 0.9 }}
-                    animate={{ scale: 1 }}
+                <img 
                     src={selectedImage} 
                     style={{ maxWidth: '95vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '0.5rem', boxShadow: '0 0 50px rgba(0,0,0,0.5)' }} 
                 />
-            </motion.div>
+            </div>
         )}
-      </AnimatePresence>
     </div>
   );
 }

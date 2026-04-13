@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { X, Camera, Plus, Trash2, Image as ImageIcon, CheckCircle2, Upload, AlertCircle, Info } from 'lucide-react';
 import { saveSessionCapture, getUserProfile } from '../../utils/db';
 import { useAuth } from '../../context/AuthContext';
@@ -133,9 +133,7 @@ export default function SessionCaptureForm({ onClose, onSave }) {
 
     return (
         <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.95, y: 30 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
+            <div 
                 className="modal-content glass-panel"
                 style={{ maxWidth: '900px', width: '100%', maxHeight: '95vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
                 onClick={e => e.stopPropagation()}
@@ -156,9 +154,8 @@ export default function SessionCaptureForm({ onClose, onSave }) {
 
                 {/* Progress Bar */}
                 <div style={{ height: '2px', background: 'rgba(255,255,255,0.05)', width: '100%' }}>
-                    <motion.div 
-                        animate={{ width: step === 1 ? '50%' : '100%' }}
-                        style={{ height: '100%', background: 'var(--primary)', boxShadow: '0 0 10px var(--primary-glow)' }}
+                    <div 
+                        style={{ width: step === 1 ? '50%' : '100%', height: '100%', background: 'var(--primary)', boxShadow: '0 0 10px var(--primary-glow)', transition: 'width 0.3s ease' }}
                     />
                 </div>
 
@@ -404,7 +401,7 @@ export default function SessionCaptureForm({ onClose, onSave }) {
                         )}
                     </div>
                 </div>
-            </motion.div>
+            </div>
             
             <style>{`
                 .textarea {
